@@ -12,6 +12,7 @@ savant = (MARTS / "savant_data.json").read_text()
 logos = (MARTS / "logos.json").read_text()
 explore = (MARTS / "explore_data.json").read_text()
 luck = (MARTS / "luck_data.json").read_text()
+gamelogs = (MARTS / "gamelogs_data.json").read_text()
 css = (SITE / "style.css").read_text()
 js = (SITE / "app.js").read_text()
 
@@ -75,6 +76,7 @@ html = """<!DOCTYPE html>
 <script>window.LUCK=__LUCK__;</script>
 <script>window.VALID=__VALID__;</script>
 <script>window.LOGOS=__LOGOS__;</script>
+<script>window.GAMELOGS=__GAMELOGS__;</script>
 <script>__JS__</script>
 </body>
 </html>"""
@@ -82,7 +84,7 @@ html = """<!DOCTYPE html>
 meta = json.loads(savant)["meta"]
 html = html.replace("__CSS__", css).replace("__VER__", meta["version"])
 html = html.replace("__SAVANT__", savant).replace("__EXPLORE__", explore)
-html = html.replace("__LUCK__", luck)
+html = html.replace("__LUCK__", luck).replace("__GAMELOGS__", gamelogs)
 html = html.replace("__VALID__", json.dumps(valid)).replace("__LOGOS__", logos).replace("__JS__", js)
 
 out = SITE / "index.html"
@@ -100,9 +102,12 @@ data_dir.mkdir(parents=True, exist_ok=True)
 
 ex = json.loads(explore)
 rows = ex.pop("rows")
-half = len(rows) // 2
-ex_a = dict(ex, rows=rows[:half])
-ex_b = {"rows": rows[half:]}
+# three-way split keeps every pushed file well under the GitHub MCP transport
+# cap (~4MB params): a = everything but rows + first third of rows; b/c = rest.
+third = len(rows) // 3
+ex_a = dict(ex, rows=rows[:third])
+ex_b = {"rows": rows[third:2 * third]}
+ex_c = {"rows": rows[2 * third:]}
 def _w(name, obj):
     p = data_dir / name
     p.write_text(json.dumps(obj, separators=(",", ":"), ensure_ascii=False))
@@ -111,8 +116,11 @@ sizes = {
     "savant.json": (data_dir / "savant.json").write_text(savant),
     "explore_a.json": _w("explore_a.json", ex_a),
     "explore_b.json": _w("explore_b.json", ex_b),
+    "explore_c.json": _w("explore_c.json", ex_c),
     "luck.json": (data_dir / "luck.json").write_text(luck),
     "logos.json": (data_dir / "logos.json").write_text(logos),
+    # gamelogs are fetched lazily (first player-page visit), not at boot
+    "gamelogs.json": (data_dir / "gamelogs.json").write_text(gamelogs),
 }
 
 shell = html.split("<script>window.SAVANT=")[0]
@@ -121,15 +129,16 @@ shell += """<div id="bootmsg">loading the record… <span id="bootpct"></span></
 <script>window.VALID=__VALID__;</script>
 <script>
 (function(){
-  var files = ['data/savant.json','data/explore_a.json','data/explore_b.json','data/luck.json','data/logos.json'];
+  var files = ['data/savant.json','data/explore_a.json','data/explore_b.json','data/explore_c.json','data/luck.json','data/logos.json'];
   var done = 0, pct = document.getElementById('bootpct');
   function got(r){ if(!r.ok) throw new Error(r.url+' -> '+r.status); done++; if(pct) pct.textContent = done+'/'+files.length; return r.json(); }
   Promise.all(files.map(function(f){ return fetch(f).then(got); })).then(function(d){
     window.SAVANT = d[0];
-    var ex = d[1]; ex.rows = ex.rows.concat(d[2].rows);
+    var ex = d[1]; ex.rows = ex.rows.concat(d[2].rows, d[3].rows);
     window.EXPLORE = ex;
-    window.LUCK = d[3];
-    window.LOGOS = d[4];
+    window.LUCK = d[4];
+    window.LOGOS = d[5];
+    window.GAMELOGS_URLS = ['data/gamelogs.json'];  // lazy: fetched on first player page
     document.getElementById('bootmsg').remove();
     __boot();
   }).catch(function(e){

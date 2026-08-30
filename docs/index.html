@@ -205,13 +205,32 @@ h3.sect.small{font-size:15px}
 .grid.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
 @media(max-width:1000px){.grid.g4{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:560px){.grid.g4{grid-template-columns:1fr}}
+
+/* ---- player profile (players overhaul) ---- */
+.phero{display:flex; gap:24px; align-items:center; flex-wrap:wrap; margin-top:34px;
+  border:1px solid var(--rule); border-radius:16px; padding:24px 26px}
+.hshot{width:148px; height:108px; object-fit:cover; object-position:top; border-radius:14px;
+  border:1px solid var(--rule); background:var(--card2); flex:none}
+@media (max-width:600px){ .hshot{width:104px; height:78px} }
+.rgrid{display:grid; grid-template-columns:repeat(auto-fit,minmax(118px,1fr)); gap:12px 14px; margin-top:10px}
+.rcell .rv{font-family:'Barlow Condensed'; font-weight:700; font-size:23px; line-height:1.05}
+.rcell .rl{font-size:10.5px; color:var(--ink3); text-transform:uppercase; letter-spacing:.06em; margin-top:2px}
+.rk{display:inline-block; margin-top:3px; font:600 10.5px 'IBM Plex Mono'; color:var(--yellow)}
+.rk .dim{color:var(--ink3)}
+.pct-row{display:grid; grid-template-columns:minmax(118px,168px) 1fr 64px 30px; gap:10px; align-items:center; padding:4.5px 0}
+.pct-row .pl{font-size:12px; color:var(--ink2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.pct-row .pbw{height:9px; background:#141a28; border-radius:99px; overflow:hidden}
+.pct-row .pbf{display:block; height:100%; border-radius:99px}
+.pct-row .pv{font:600 12.5px 'IBM Plex Mono'; text-align:right; white-space:nowrap}
+.pct-row .pp{font:700 12.5px 'IBM Plex Mono'; text-align:right}
+.tbl tr.dnp td{color:var(--ink3); background:rgba(255,255,255,.012)}
 </style>
 <style>#bootmsg{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;font:600 14px 'IBM Plex Mono',monospace;color:#8fa2bd;background:#0a0d13;z-index:99}</style></head>
 <body>
 <header class="topbar"><div class="wrap topbar-in">
   <a class="wordmark" href="#/">AFFL<b>SAVANT</b></a>
   <nav class="mainnav" id="nav" aria-label="Primary"></nav>
-  <span class="ver">v2026.08.30.2</span>
+  <span class="ver">v2026.08.30.3</span>
 </div></header>
 <main id="app" aria-live="polite"></main>
 <footer><div class="wrap">
@@ -223,15 +242,16 @@ h3.sect.small{font-size:15px}
 <script>window.VALID={"modern_ok": 1596, "fp_recon_n": 60905, "fp_recon_pct": 99.55, "fp_recon_mad": 0.019, "starter_weeks": 18345, "starter_match_pct": 99.19, "pbp_plays": 399191, "bridge": {"rostered": 918, "gsis": 886, "dst": 32, "quarantined": 0}, "trades": {"events": 224, "items_direct": 46, "items_inferred": 150, "unresolved": 28, "custody_confirmed": 194}, "xfp2": {"recon": {"n": 60892, "mean_abs_diff": 0.007, "pct_within_1": 99.8, "worst": 11.2}, "holdout": [{"pos": "ALL", "n": 2684, "xfp2_pred_r": 0.8163, "actual2_pred_r": 0.8084, "xfp1_pred_r": 0.8027, "actual1_pred_r": 0.803}, {"pos": "QB", "n": 307, "xfp2_pred_r": 0.4482, "actual2_pred_r": 0.4791, "xfp1_pred_r": 0.334, "actual1_pred_r": 0.4832}, {"pos": "RB", "n": 718, "xfp2_pred_r": 0.6637, "actual2_pred_r": 0.6937, "xfp1_pred_r": 0.6607, "actual1_pred_r": 0.6917}, {"pos": "TE", "n": 533, "xfp2_pred_r": 0.654, "actual2_pred_r": 0.6023, "xfp1_pred_r": 0.651, "actual1_pred_r": 0.5976}, {"pos": "WR", "n": 1126, "xfp2_pred_r": 0.664, "actual2_pred_r": 0.6524, "xfp1_pred_r": 0.647, "actual1_pred_r": 0.6509}], "worst_bias_pct": 7.22}};</script>
 <script>
 (function(){
-  var files = ['data/savant.json','data/explore_a.json','data/explore_b.json','data/luck.json','data/logos.json'];
+  var files = ['data/savant.json','data/explore_a.json','data/explore_b.json','data/explore_c.json','data/luck.json','data/logos.json'];
   var done = 0, pct = document.getElementById('bootpct');
   function got(r){ if(!r.ok) throw new Error(r.url+' -> '+r.status); done++; if(pct) pct.textContent = done+'/'+files.length; return r.json(); }
   Promise.all(files.map(function(f){ return fetch(f).then(got); })).then(function(d){
     window.SAVANT = d[0];
-    var ex = d[1]; ex.rows = ex.rows.concat(d[2].rows);
+    var ex = d[1]; ex.rows = ex.rows.concat(d[2].rows, d[3].rows);
     window.EXPLORE = ex;
-    window.LUCK = d[3];
-    window.LOGOS = d[4];
+    window.LUCK = d[4];
+    window.LOGOS = d[5];
+    window.GAMELOGS_URLS = ['data/gamelogs.json'];  // lazy: fetched on first player page
     document.getElementById('bootmsg').remove();
     __boot();
   }).catch(function(e){
@@ -352,6 +372,7 @@ function render(){
     else if(r==='f') franchiseView(seg[1]);
     else if(r==='players') playersView();
     else if(r==='p') playerView(+seg[1]);
+    else if(r==='pn') nflPlayerView(+seg[1]);
     else if(r==='seasons') seasonsView();
     else if(r==='s') seasonView(+seg[1]);
     else if(r==='drafts') draftsView(seg[1]==='all'?'all':(seg[1]?+seg[1]:null));
@@ -994,106 +1015,716 @@ function tradeCard(t, focusFid){
     <div style="display:flex;gap:14px;flex-wrap:wrap">${sideBlocks}</div></div>`;
 }
 
-/* ---------------- PLAYERS ---------------- */
-let playerQ = '', playerPos = '';
+/* ================= PLAYERS ================= */
+/* Player-profile layer: PlayerProfiler-style percentile profile + grouped
+   AFFL résumé with league-internal ranks, Sleeper-clean game logs (custody
+   weeks from EXPLORE + non-custody weeks from the lazy GAMELOGS mart),
+   FantasyPros-style position-aware season tables. */
+const TEAMC = {ARI:'#97233F',ATL:'#A71930',BAL:'#241773',BUF:'#00338D',CAR:'#0085CA',CHI:'#C83803',
+ CIN:'#FB4F14',CLE:'#FF3C00',DAL:'#0053A0',DEN:'#FB4F14',DET:'#0076B6',GB:'#37543A',HOU:'#03202F',
+ IND:'#0057B8',JAX:'#006778',JAC:'#006778',KC:'#E31837',LA:'#003594',LAC:'#0080C6',LV:'#A5ACAF',
+ MIA:'#008E97',MIN:'#4F2683',NE:'#0A2342',NO:'#D3BC8D',NYG:'#0B2265',NYJ:'#125740',PHI:'#004C54',
+ PIT:'#FFB612',SEA:'#69BE28',SF:'#AA0000',TB:'#D50A0A',TEN:'#4B92DB',WAS:'#873B26',
+ OAK:'#A5ACAF',SD:'#0080C6',STL:'#003594'};
+const teamAccent = tm => TEAMC[tm] || '#31405e';
+const plRoute = pi => { const e=(E.players[pi]||[])[0]; return e!=null? '#/p/'+e : '#/pn/'+pi; };
+function headshotUrl(p){
+  if(p.img) return p.img;
+  if(p.eid && p.eid>0 && !p.dst) return 'https://a.espncdn.com/i/headshots/nfl/players/full/'+p.eid+'.png';
+  return null;
+}
+
+/* ---- lazy gamelogs (inline on the artifact build; fetched on Pages) ---- */
+let _glp = null;
+function ensureGL(cb){
+  if(window.GAMELOGS) return cb(true);
+  const urls = window.GAMELOGS_URLS;
+  if(!urls || !urls.length) return cb(false);
+  if(!_glp) _glp = Promise.all(urls.map(u=>fetch(u).then(r=>{ if(!r.ok) throw new Error(u); return r.json(); })))
+    .then(parts=>{ const g=parts[0];
+      for(let i=1;i<parts.length;i++){ g.rows=g.rows.concat(parts[i].rows||[]); g.custRows=(g.custRows||[]).concat(parts[i].custRows||[]); }
+      window.GAMELOGS=g; return true; })
+    .catch(()=>false);
+  _glp.then(cb);
+}
+
+/* ---- merged weekly logs: custody rows (explore) + non-custody rows ---- */
+function playerLogs(pi){
+  const C = COL, out = [];
+  const gl = window.GAMELOGS;
+  const ext = {};
+  let GC=null, GCC=null;
+  if(gl){
+    GC={}; gl.cols.forEach((c,i)=>GC[c]=i);
+    GCC={}; gl.custCols.forEach((c,i)=>GCC[c]=i);
+    gl.custRows.forEach(r=>{ if(r[GCC.p]===pi) ext[r[GCC.s]*100+r[GCC.w]]=r; });
+  }
+  E.rows.forEach(r=>{
+    if(r[C.p]!==pi) return;
+    const x = ext[r[C.s]*100+r[C.w]];
+    const played = r[C.fp]!=null;
+    out.push({s:r[C.s], w:r[C.w], tm:r[C.tm], opp:r[C.opp], fp:r[C.fp], xfp:r[C.xfp2], fpoe:r[C.fpoe2],
+      cmp:x?x[GCC.cmp]:(played?0:null), att:x?x[GCC.att]:(played?0:null),
+      pyd:r[C.pyd], ptd:r[C.ptd], int:r[C.int], sk:r[C.sk],
+      car:r[C.car], ryd:r[C.ryd], rtd:r[C.rtd], tgt:r[C.tgt], rec:r[C.rec], recyd:r[C.recyd], rectd:r[C.rectd],
+      fuml:x?x[GCC.fuml]:(played?0:null),
+      fgm:x?x[GCC.fgm]:(played?0:null), fga:x?x[GCC.fga]:(played?0:null),
+      xpm:x?x[GCC.xpm]:(played?0:null), xpa:x?x[GCC.xpa]:(played?0:null),
+      cust:{fid:E.franchises[r[C.f]][0], st:r[C.st], ev:r[C.ev], affl:r[C.affl], slot:r[C.slot]}, dnp:!played});
+  });
+  if(gl) gl.rows.forEach(r=>{
+    if(r[GC.p]!==pi) return;
+    out.push({s:r[GC.s], w:r[GC.w], tm:r[GC.tm], opp:r[GC.opp], fp:r[GC.fp], xfp:r[GC.xfp2], fpoe:r[GC.fpoe2],
+      cmp:r[GC.cmp], att:r[GC.att], pyd:r[GC.pyd], ptd:r[GC.ptd], int:r[GC.int], sk:r[GC.sk],
+      car:r[GC.car], ryd:r[GC.ryd], rtd:r[GC.rtd], tgt:r[GC.tgt], rec:r[GC.rec], recyd:r[GC.recyd], rectd:r[GC.rectd],
+      fuml:r[GC.fuml], fgm:r[GC.fgm], fga:r[GC.fga], xpm:r[GC.xpm], xpa:r[GC.xpa], cust:null, dnp:false});
+  });
+  out.sort((a,b)=>a.s-b.s || a.w-b.w);
+  return out;
+}
+
+/* ---- defense-vs-position difficulty for the opponent chip ---- */
+let _defIdx = null;
+function defIdx(){
+  if(_defIdx) return _defIdx;
+  const m = {}, ranks = {};
+  const DB = {}; (E.defBoardCols||[]).forEach((c,i)=>DB[c]=i);
+  const byGrp = {};
+  (E.defBoards||[]).forEach(r=>{
+    m[r[DB.s]+'|'+r[DB.def]+'|'+r[DB.pos]] = r[DB.idx];
+    (byGrp[r[DB.s]+'|'+r[DB.pos]] = byGrp[r[DB.s]+'|'+r[DB.pos]]||[]).push(r);
+  });
+  Object.entries(byGrp).forEach(([k, rows])=>{
+    rows.sort((a,b)=>(b[DB.idx]||0)-(a[DB.idx]||0));
+    rows.forEach((r,i)=>ranks[r[DB.s]+'|'+r[DB.def]+'|'+r[DB.pos]] = i+1);
+  });
+  _defIdx = {idx:m, rank:ranks};
+  return _defIdx;
+}
+function oppCell(s, opp, pos){
+  if(!opp) return '·';
+  if(!pos || pos==='K' || pos==='D/ST') return esc(opp);
+  const d = defIdx();
+  const k = s+'|'+opp+'|'+pos, v = d.idx[k];
+  if(v==null) return esc(opp);
+  const col = v>=1.12? 'var(--green)' : v<=0.88? 'var(--red)' : 'var(--ink3)';
+  return `${esc(opp)} <span style="color:${col};cursor:default" title="${esc(opp)} allowed ${v}× the league-average FP to ${esc(pos)}s in ${s} (rank ${d.rank[k]} of 32, 1 = most generous)">●</span>`;
+}
+
+/* ---- percentile machinery over seasonRows (position peers) ---- */
+const AGG_KEYS = ['g','fp','xfp2','fpoe2','afpoe2','pyd','ptd','pint','cmp','att','sk','car','ryd','rtd',
+ 'gl','rzc','tgt','rec','recyd','rectd','air','yac','rztgt','eztgt','recepa','repa','pepa','db',
+ 'fuml','fgm','fga','xpm','xpa'];
+function aggInit(){ const a={}; AGG_KEYS.forEach(k=>a[k]=0); a.adotW=0; a.cpoeW=0; a.tshareW=0; a.woprW=0; return a; }
+function aggAdd(a, r){
+  AGG_KEYS.forEach(k=>{ const v=r[SCOL[k]]; if(v!=null) a[k]+=v; });
+  const g=r[SCOL.g]||0, tgt=r[SCOL.tgt]||0, db=r[SCOL.db]||0;
+  if(r[SCOL.adot]!=null) a.adotW += r[SCOL.adot]*tgt;
+  if(r[SCOL.cpoe]!=null) a.cpoeW += r[SCOL.cpoe]*db;
+  if(r[SCOL.tshare]!=null) a.tshareW += r[SCOL.tshare]*g;
+  if(r[SCOL.wopr]!=null) a.woprW += r[SCOL.wopr]*g;
+  return a;
+}
+function pQual(pos, a, career){
+  const m = career?2:1;
+  if((a.g||0) < (career?16:6)) return false;
+  if(pos==='QB') return a.att >= 100*m;
+  if(pos==='RB') return (a.car+a.tgt) >= 50*m;
+  if(pos==='WR') return a.tgt >= 30*m;
+  if(pos==='TE') return a.tgt >= 20*m;
+  if(pos==='K')  return a.fga >= 10*m;
+  return true;
+}
+const _pmCommon = [
+ ['fpg','FP / game', a=>a.g?a.fp/a.g:null, f1],
+ ['xfpg','Expected FP / game', a=>a.g&&a.xfp2?a.xfp2/a.g:null, f1],
+ ['fpoeg','FPOE / game', a=>a.g&&a.xfp2?a.fpoe2/a.g:null, v=>signed(v,f2)],
+];
+const _pmRec = [
+ ['tgtg','Targets / game', a=>a.g?a.tgt/a.g:null, f1],
+ ['recydg','Rec yards / game', a=>a.g?a.recyd/a.g:null, f1],
+ ['ctch','Catch rate', a=>a.tgt?a.rec/a.tgt:null, pct1],
+ ['ypt','Yards / target', a=>a.tgt?a.recyd/a.tgt:null, f2],
+ ['adot','aDOT', a=>a.tgt&&a.adotW?a.adotW/a.tgt:null, f1],
+ ['tsh','Target share', a=>a.g&&a.tshareW?a.tshareW/a.g:null, pct1],
+ ['wopr','WOPR', a=>a.g&&a.woprW?a.woprW/a.g:null, f2],
+ ['epat','EPA / target', a=>a.tgt?a.recepa/a.tgt:null, f2],
+ ['rztgtg','RZ targets / game', a=>a.g?a.rztgt/a.g:null, f2],
+];
+const PM = {
+ QB: [..._pmCommon,
+  ['pydg','Pass yards / game', a=>a.g?a.pyd/a.g:null, f1],
+  ['ptdg','Pass TD / game', a=>a.g?a.ptd/a.g:null, f2],
+  ['cmppct','Completion %', a=>a.att?a.cmp/a.att:null, pct1],
+  ['ypa','Yards / attempt', a=>a.att?a.pyd/a.att:null, f2],
+  ['intg','INT / game', a=>a.g?a.pint/a.g:null, f2, 1],
+  ['epadb','EPA / dropback', a=>a.db?a.pepa/a.db:null, f2],
+  ['cpoe','CPOE', a=>a.db&&a.cpoeW?a.cpoeW/a.db:null, v=>v==null?'·':signed(v,x=>x.toFixed(1))+'%'],
+  ['rydg','Rush yards / game', a=>a.g?a.ryd/a.g:null, f1]],
+ RB: [..._pmCommon,
+  ['carg','Carries / game', a=>a.g?a.car/a.g:null, f1],
+  ['rydg','Rush yards / game', a=>a.g?a.ryd/a.g:null, f1],
+  ['ypc','Yards / carry', a=>a.car?a.ryd/a.car:null, f2],
+  ['glg','Goal-line carries / game', a=>a.g?a.gl/a.g:null, f2],
+  ['epac','EPA / carry', a=>a.car?a.repa/a.car:null, f2],
+  ['tgtg','Targets / game', a=>a.g?a.tgt/a.g:null, f1],
+  ['recydg','Rec yards / game', a=>a.g?a.recyd/a.g:null, f1],
+  ['tsh','Target share', a=>a.g&&a.tshareW?a.tshareW/a.g:null, pct1]],
+ WR: [..._pmCommon, ..._pmRec],
+ TE: [..._pmCommon, ..._pmRec],
+ K: [
+  ['fpg','FP / game', a=>a.g?a.fp/a.g:null, f1],
+  ['fgmg','FG made / game', a=>a.g?a.fgm/a.g:null, f2],
+  ['fgag','FG attempts / game', a=>a.g?a.fga/a.g:null, f2],
+  ['fgpct','FG %', a=>a.fga?a.fgm/a.fga:null, pct1],
+  ['xpg','XP made / game', a=>a.g?a.xpm/a.g:null, f2]],
+};
+let _pools = null;
+function pctPools(){
+  if(_pools) return _pools;
+  const seasonAggs = {}, careerAggs = {}, rowsByPi = new Map();
+  E.seasonRows.forEach(r=>{
+    const pi=r[SCOL.p], pos=EPOS[pi]; if(!pos||!PM[pos]) return;
+    if(!rowsByPi.has(pi)) rowsByPi.set(pi, []);
+    rowsByPi.get(pi).push(r);
+    const sk = pos+'|'+r[SCOL.s];
+    (seasonAggs[sk]=seasonAggs[sk]||[]).push(aggAdd(aggInit(), r));
+  });
+  rowsByPi.forEach((rs, pi)=>{
+    const pos=EPOS[pi];
+    const a=aggInit(); rs.forEach(r=>aggAdd(a,r));
+    (careerAggs[pos]=careerAggs[pos]||[]).push(a);
+  });
+  _pools = {seasonAggs, careerAggs, rowsByPi, sorted:{}};
+  return _pools;
+}
+function pctOf(pos, scope, mk, fn, v, inv, career){
+  if(v==null) return null;
+  const P = pctPools();
+  const ck = pos+'|'+scope+'|'+mk;
+  let vals = P.sorted[ck];
+  if(!vals){
+    const aggs = (scope==='career'? P.careerAggs[pos] : P.seasonAggs[pos+'|'+scope]) || [];
+    vals = aggs.filter(a=>pQual(pos,a,career)).map(fn).filter(x=>x!=null&&!isNaN(x)).sort((a,b)=>a-b);
+    P.sorted[ck] = vals;
+  }
+  if(!vals.length) return null;
+  let lo=0, hi=vals.length;
+  while(lo<hi){ const m=(lo+hi)>>1; if(vals[m]<=v) lo=m+1; else hi=m; }
+  const p = Math.round(100*lo/vals.length);
+  if(!inv) return {p, n:vals.length};
+  let lo2=0, hi2=vals.length;
+  while(lo2<hi2){ const m=(lo2+hi2)>>1; if(vals[m]<v) lo2=m+1; else hi2=m; }
+  return {p:Math.round(100*(vals.length-lo2)/vals.length), n:vals.length};
+}
+const pctColor = p => `hsl(${Math.round(p*1.2)},68%,50%)`;
+function pctBarsHtml(pos, agg, scope, career){
+  const rows = (PM[pos]||[]).map(([mk,l,fn,fmt,inv])=>{
+    const v = fn(agg);
+    const pr = pctOf(pos, scope, mk, fn, v, inv, career);
+    if(v==null||pr==null) return '';
+    return `<div class="pct-row" title="${esc(l)}: ${pr.p}th percentile among ${pr.n} qualified ${esc(pos)} ${career?'careers':scope+' seasons'}">
+      <span class="pl">${esc(l)}</span>
+      <span class="pbw"><span class="pbf" style="width:${Math.max(2,pr.p)}%;background:${pctColor(pr.p)}"></span></span>
+      <span class="pv">${fmt(v)}</span><span class="pp" style="color:${pctColor(pr.p)}">${pr.p}</span></div>`;
+  }).filter(Boolean).join('');
+  return rows || '<p class="dim small">Not enough volume for a percentile profile in this scope.</p>';
+}
+
+/* ---- league-rank memos for the AFFL résumé ---- */
+let _lr = null;
+function leagueRanks(){
+  if(_lr) return _lr;
+  const C = COL;
+  const bestWk = {}, benchLeft = {}, afflWk = {};
+  const regW = {}; Object.keys(S.seasons).forEach(y=>regW[y]=S.seasons[y].regWeeks||14);
+  E.rows.forEach(r=>{
+    const pi=r[C.p], v=r[C.affl];
+    if(v==null) return;
+    afflWk[pi]=(afflWk[pi]||0)+1;
+    if(r[C.w] > (regW[r[C.s]]||14)) return;   // record-book scope: regular season only
+    if(r[C.st]){ const b=bestWk[pi]; if(!b||v>b.v) bestWk[pi]={v, s:r[C.s], w:r[C.w], fid:E.franchises[r[C.f]][0]}; }
+    else if(r[C.s]>=2018) benchLeft[pi]=(benchLeft[pi]||0)+v;
+  });
+  const dr = {};
+  S.drafts.forEach(d=>{
+    const o = dr[d.eid]=dr[d.eid]||{n:0,usd:0,par:0,peak:null};
+    o.n++; if(d.bid>0){ o.usd+=d.bid; if(!o.peak||d.bid>o.peak.bid) o.peak={bid:d.bid,s:d.s,fid:d.fid}; }
+    if(d.par!=null) o.par+=d.par;
+  });
+  const tr = {};
+  S.trades.forEach(t=>Object.values(t.sides).forEach(eids=>eids.forEach(e=>{ tr[e]=(tr[e]||0)+1; })));
+  const rankMap = (pairs, desc=true)=>{
+    const sorted=[...pairs].sort((a,b)=>desc?b[1]-a[1]:a[1]-b[1]);
+    const m={}; sorted.forEach(([k],i)=>m[k]=i+1); return {m, n:sorted.length};
+  };
+  _lr = {
+    bestWk, benchLeft, dr, tr,
+    afflPts: rankMap(S.players.filter(p=>p.afflPts>0).map(p=>[p.eid,p.afflPts])),
+    weeks: rankMap(S.players.filter(p=>p.stints.length).map(p=>[p.eid,p.stints.reduce((a,s)=>a+s.weeks,0)])),
+    usd: rankMap(Object.entries(dr).filter(([,o])=>o.usd>0).map(([e,o])=>[e,o.usd])),
+    dpar: rankMap(Object.entries(dr).filter(([,o])=>o.n>0).map(([e,o])=>[e,o.par])),
+    bwk: rankMap(Object.entries(bestWk).map(([pi,b])=>[pi,b.v])),
+  };
+  return _lr;
+}
+const rkChip = (rk, n)=> rk? `<span class="rk">#${rk} <span class="dim">of ${f0(n)}</span></span>` : '';
+
+/* ---- career NFL memo for the index ---- */
+let _cnfl = null;
+function careerNfl(){
+  if(_cnfl) return _cnfl;
+  _cnfl = new Map();
+  E.seasonRows.forEach(r=>{
+    const pi=r[SCOL.p];
+    let c=_cnfl.get(pi);
+    if(!c){ c={g:0,fp:0,xfp2:0,fpoe2:0,s0:r[SCOL.s],s1:r[SCOL.s],tm:r[SCOL.tm]}; _cnfl.set(pi,c); }
+    c.g+=r[SCOL.g]||0; c.fp+=r[SCOL.fp]||0; c.xfp2+=r[SCOL.xfp2]||0; c.fpoe2+=r[SCOL.fpoe2]||0;
+    if(r[SCOL.s]>=c.s1){ c.s1=r[SCOL.s]; c.tm=r[SCOL.tm]||c.tm; }
+    if(r[SCOL.s]<c.s0) c.s0=r[SCOL.s];
+  });
+  return _cnfl;
+}
+
+/* ---------------- PLAYERS INDEX ---------------- */
+let playerQ = '', playerPos = '', playerScope = 'affl', playerSort = 'affl';
 function playersView(){
-  const opts = ['','QB','RB','WR','TE','K','D/ST'].map(p=>`<option value="${p}" ${playerPos===p?'selected':''}>${p||'All positions'}</option>`).join('');
-  app.innerHTML = `<div class="wrap"><div class="hero"><div class="kicker">Everyone ever rostered in the AFFL · ${S.players.length} identities</div>
-    <h1 class="display">Players</h1></div>
-    <div class="xrow" style="margin-bottom:14px">
-      <input type="text" id="pq" class="searchbox" placeholder="Search players…" value="${esc(playerQ)}">
-      <select id="ppos">${opts}</select></div>
+  const posChips = ['QB','RB','WR','TE','K','D/ST'].map(p=>`<span class="chip ${playerPos===p?'on':''}" data-pos="${p}">${p}</span>`).join('');
+  const sorts = playerScope==='affl'
+    ? [['affl','AFFL pts'],['wks','Custody weeks'],['starts','Starts'],['usd','Auction $ lifetime'],['nfp','NFL FP'],['fpoe','NFL FPOE']]
+    : [['nfp','NFL FP'],['fppg','FP / game'],['xfp','xFP'],['fpoe','FPOE'],['g','Games']];
+  app.innerHTML = `<div class="wrap"><div class="hero"><div class="kicker">${f0(S.players.length)} AFFL identities · ${f0(E.players.length)} players in the NFL pool</div>
+    <h1 class="display">Players</h1>
+    <p class="tag">Every player the league has ever held — and the ${f0(E.players.filter(p=>p[5]===0).length)} it never touched. Profiles join custody history, auction spend, and trades to full NFL game logs.</p></div>
+    <div class="xbar">
+      <div class="xrow"><span class="lbl">Scope</span>
+        <span class="chip ${playerScope==='affl'?'on':''}" data-scope="affl">AFFL rostered</span>
+        <span class="chip ${playerScope==='nfl'?'on':''}" data-scope="nfl">All NFL 2014–${LAST}</span></div>
+      <div class="xrow"><span class="lbl">Position</span>${posChips}</div>
+      <div class="xrow"><span class="lbl">Find</span>
+        <input type="text" id="pq" class="searchbox" placeholder="Search players…" value="${esc(playerQ)}">
+        <span class="lbl" style="width:auto;margin-left:14px">Rank by</span>
+        <select id="psort" style="max-width:220px">${sorts.map(([v,l])=>`<option value="${v}" ${playerSort===v?'selected':''}>${l}</option>`).join('')}</select></div>
+    </div>
     <div id="plist"></div></div>`;
   const draw = ()=>{
     const q = playerQ.toLowerCase();
-    const list = S.players.filter(p => (!q || p.name.toLowerCase().includes(q)) && (!playerPos || p.pos===playerPos)).slice(0, 250);
-    $('#plist').innerHTML = `<div class="tblwrap"><table class="tbl"><thead><tr>
-      <th class="l">Player</th><th class="l">Pos</th><th class="sortable">Custody wks</th><th class="sortable">Starts</th>
-      <th class="sortable">AFFL pts</th><th class="sortable">Franchises</th><th class="l">Custody</th></tr></thead><tbody>
-      ${list.map(p=>{
-        const wks = p.stints.reduce((a,s)=>a+s.weeks,0), sts = p.stints.reduce((a,s)=>a+s.starts,0);
-        const fids = [...new Set(p.stints.map(s=>s.fid))];
-        return `<tr class="click" data-href="#/p/${p.eid}">
-        <td class="l">${p.img?`<img class="headshot" loading="lazy" src="${esc(p.img)}" alt="" onerror="this.style.display='none'"> `:''}${esc(p.name)}</td>
-        <td class="l pos">${esc(p.pos||'')}</td><td data-v="${wks}">${wks}</td><td data-v="${sts}">${sts}</td>
-        <td data-v="${p.afflPts}">${f1(p.afflPts)}</td><td data-v="${fids.length}">${fids.length}</td>
-        <td class="l">${fids.slice(0,6).map(f=>logoHtml(f)).join(' ')}</td></tr>`;}).join('')}
-      </tbody></table></div>
-      <p class="dim small" style="margin-top:8px">Showing ${list.length}${list.length===250?' (refine search for more)':''} of ${S.players.length}, ranked by career AFFL points under custody.</p>`;
+    if(playerScope==='affl'){
+      const lr = leagueRanks();
+      const rows = S.players
+        .filter(p => (!q || (p.name||'').toLowerCase().includes(q)) && (!playerPos || p.pos===playerPos))
+        .map(p=>{
+          const wks = p.stints.reduce((a,s)=>a+s.weeks,0), sts = p.stints.reduce((a,s)=>a+s.starts,0);
+          const c = EIDX[p.eid]!=null ? careerNfl().get(EIDX[p.eid]) : null;
+          const d = lr.dr[p.eid];
+          return {p, wks, sts, affl:p.afflPts||0, usd:d?d.usd:0, nfp:c?c.fp:0, fpoe:c?c.fpoe2:0,
+                  fids:[...new Set(p.stints.map(s=>s.fid))]};
+        });
+      const key = {affl:r=>r.affl, wks:r=>r.wks, starts:r=>r.sts, usd:r=>r.usd, nfp:r=>r.nfp, fpoe:r=>r.fpoe}[playerSort]||(r=>r.affl);
+      rows.sort((a,b)=>key(b)-key(a));
+      const list = rows.slice(0,300);
+      $('#plist').innerHTML = `<div class="tblwrap"><table class="tbl"><thead><tr>
+        <th class="l">#</th><th class="l">Player</th><th class="l">Pos</th>
+        <th class="sortable">AFFL pts</th><th class="sortable">Wks</th><th class="sortable">Starts</th>
+        <th class="sortable" title="lifetime auction dollars spent on this player (2016+)">$ lifetime</th>
+        <th class="sortable" title="career NFL fantasy points 2014-2025, std non-PPR">NFL FP</th>
+        <th class="sortable" title="career FP over expected (xfp_v2)">FPOE</th><th class="l">Custody</th></tr></thead><tbody>
+        ${list.map((r,i)=>{
+          const hs = headshotUrl(r.p);
+          return `<tr class="click" data-href="#/p/${r.p.eid}">
+          <td class="l dim">${i+1}</td>
+          <td class="l"><span style="display:inline-flex;align-items:center;gap:9px">${hs?`<img class="headshot" loading="lazy" src="${esc(hs)}" alt="" onerror="this.style.display='none'">`:''}<a href="#/p/${r.p.eid}">${esc(r.p.name)}</a>${r.p.draftOnly?' <span class="badge yellow" title="drafted, never held an observable roster week">draft-only</span>':''}</span></td>
+          <td class="l pos">${esc(r.p.pos||'')}</td>
+          <td data-v="${r.affl}"><b>${f1(r.affl)}</b></td><td data-v="${r.wks}">${r.wks}</td><td data-v="${r.sts}">${r.sts}</td>
+          <td data-v="${r.usd}">${r.usd?'$'+r.usd:'·'}</td>
+          <td data-v="${r.nfp}">${f1(r.nfp)}</td>
+          <td data-v="${r.fpoe}" class="${cls(r.fpoe)}">${signed(r.fpoe,f1)}</td>
+          <td class="l">${r.fids.slice(0,6).map(f=>logoHtml(f)).join(' ')}</td></tr>`;}).join('')}
+        </tbody></table></div>
+        <p class="dim small" style="margin-top:8px">Showing ${list.length} of ${rows.length} — refine the search for deeper cuts. AFFL pts are ESPN applied totals while under custody; $ lifetime sums auction prices 2016+.</p>`;
+    } else {
+      const cn = careerNfl();
+      const rows = [];
+      cn.forEach((c,pi)=>{
+        const nm = ENAME[pi]||'';
+        if(q && !nm.toLowerCase().includes(q)) return;
+        if(playerPos && EPOS[pi]!==playerPos) return;
+        rows.push({pi, c, ro:(E.players[pi]||[])[5]===1});
+      });
+      const key = {nfp:r=>r.c.fp, fppg:r=>r.c.g?r.c.fp/r.c.g:0, xfp:r=>r.c.xfp2, fpoe:r=>r.c.fpoe2, g:r=>r.c.g}[playerSort]||(r=>r.c.fp);
+      rows.sort((a,b)=>key(b)-key(a));
+      const list = rows.slice(0,300);
+      $('#plist').innerHTML = `<div class="tblwrap"><table class="tbl"><thead><tr>
+        <th class="l">#</th><th class="l">Player</th><th class="l">Pos</th><th class="l">Years</th><th class="l">Team</th>
+        <th class="sortable">G</th><th class="sortable">FP</th><th class="sortable">FP/G</th>
+        <th class="sortable">xFP</th><th class="sortable">FPOE</th><th class="l">AFFL</th></tr></thead><tbody>
+        ${list.map((r,i)=>{
+          const p = E.players[r.pi]||[];
+          const hs = p[4] || (r.ro&&p[0]>0?'https://a.espncdn.com/i/headshots/nfl/players/full/'+p[0]+'.png':null);
+          return `<tr class="click" data-href="${plRoute(r.pi)}">
+          <td class="l dim">${i+1}</td>
+          <td class="l"><span style="display:inline-flex;align-items:center;gap:9px">${hs?`<img class="headshot" loading="lazy" src="${esc(hs)}" alt="" onerror="this.style.display='none'">`:''}<a href="${plRoute(r.pi)}">${esc(p[1]||'')}</a></span></td>
+          <td class="l pos">${esc(EPOS[r.pi]||'')}</td>
+          <td class="l dim small">${r.c.s0===r.c.s1?r.c.s0:r.c.s0+'–'+r.c.s1}</td><td class="l dim small">${esc(r.c.tm||'')}</td>
+          <td data-v="${r.c.g}">${r.c.g}</td><td data-v="${r.c.fp}"><b>${f1(r.c.fp)}</b></td>
+          <td data-v="${r.c.g?r.c.fp/r.c.g:0}">${f1(r.c.g?r.c.fp/r.c.g:null)}</td>
+          <td data-v="${r.c.xfp2}">${f1(r.c.xfp2)}</td>
+          <td data-v="${r.c.fpoe2}" class="${cls(r.c.fpoe2)}">${signed(r.c.fpoe2,f1)}</td>
+          <td class="l">${r.ro?'<span class="badge green" title="has AFFL custody history">AFFL</span>':'<span class="badge" title="never AFFL-rostered">never held</span>'}</td></tr>`;}).join('')}
+        </tbody></table></div>
+        <p class="dim small" style="margin-top:8px">Showing ${list.length} of ${f0(rows.length)} QB/RB/WR/TE/K careers 2014–${LAST} (regular season). D/ST exists only as AFFL custody — see the AFFL scope.</p>`;
+    }
     bindRows(); sortableTable($('#plist'));
   };
   $('#pq').addEventListener('input', e=>{ playerQ=e.target.value; draw(); });
-  $('#ppos').addEventListener('change', e=>{ playerPos=e.target.value; draw(); });
+  $('#psort').addEventListener('change', e=>{ playerSort=e.target.value; draw(); });
+  app.querySelectorAll('[data-pos]').forEach(c=>c.onclick=()=>{ playerPos = playerPos===c.dataset.pos?'':c.dataset.pos; playersView(); });
+  app.querySelectorAll('[data-scope]').forEach(c=>c.onclick=()=>{
+    if(playerScope!==c.dataset.scope){ playerScope=c.dataset.scope; playerSort = playerScope==='affl'?'affl':'nfp'; playersView(); } });
   draw();
 }
 
-function playerView(eid){
-  const p = PL[eid]; if(!p){ app.innerHTML='<div class="wrap"><p style="padding:40px 0">Unknown player.</p></div>'; return; }
-  const C = COL;
-  const mine = E.rows.filter(r=>r[C.p]===EIDX[eid]);
-  const bySeason = {};
-  mine.forEach(r=>{ (bySeason[r[C.s]] = bySeason[r[C.s]]||[]).push(r); });
+/* ---------------- PLAYER PAGE ---------------- */
+function custodyMapHtml(pi){
+  const C = COL, bySeason = {};
+  E.rows.forEach(r=>{ if(r[C.p]===pi) (bySeason[r[C.s]] = bySeason[r[C.s]]||[]).push(r); });
   const custYears = Object.keys(bySeason).map(Number).sort((a,b)=>a-b);
+  if(!custYears.length) return {html:'', legend:'', fids:[]};
   const strip = custYears.map(y=>{
     const cells = [];
     for(let w=1; w<=18; w++){
       const r = bySeason[y].find(x=>x[C.w]===w);
       if(!r){ cells.push('<span class="cell"></span>'); continue; }
       const fid = E.franchises[r[C.f]][0];
-      cells.push(`<span class="cell on ${r[C.st]?'st':''}" title="${y} Wk ${w} · ${esc(histName(y,fid))}${r[C.st]?' · started':' · bench'}${r[C.affl]!=null?' · '+f1(r[C.affl])+' pts':''}" style="background:${fColor(fid)}"></span>`);
+      cells.push(`<span class="cell on ${r[C.st]?'st':''}" title="${y} Wk ${w} · ${esc(histName(y,fid))}${r[C.ev]?' · held (slot unobservable)':r[C.st]?' · started':' · bench'}${r[C.affl]!=null?' · '+f1(r[C.affl])+' pts':''}" style="background:${fColor(fid)}"></span>`);
     }
     return `<span>${y}</span>${cells.join('')}`;
   }).join('');
-  const legFids = [...new Set(mine.map(r=>E.franchises[r[C.f]][0]))];
-  const legend = legFids.map(f=>`<span><span class="sw" style="background:${fColor(f)}"></span>${esc((F[f]||{}).display_name)}</span>`).join('');
+  const fids = [...new Set([].concat(...Object.values(bySeason)).map(r=>E.franchises[r[C.f]][0]))];
+  const legend = fids.map(f=>`<span><span class="sw" style="background:${fColor(f)}"></span>${esc((F[f]||{}).display_name)}</span>`).join('');
+  return {html:strip, legend, fids};
+}
+
+function resumeHtml(p, pi){
+  const lr = leagueRanks();
+  const wks = p.stints.reduce((a,s)=>a+s.weeks,0), sts = p.stints.reduce((a,s)=>a+s.starts,0);
+  const seasonsHeld = new Set(p.stints.map(s=>s.s)).size;
+  const frs = new Set(p.stints.map(s=>s.fid)).size;
+  const d = lr.dr[p.eid], trN = lr.tr[p.eid]||0;
+  const bw = pi!=null? lr.bestWk[pi] : null;
+  const bench = pi!=null? lr.benchLeft[pi] : null;
+  const cell = (v,l,rk)=>`<div class="rcell"><div class="rv">${v}</div><div class="rl">${l}</div>${rk||''}</div>`;
+  const own = [
+    cell(f0(wks),'Custody weeks', rkChip(lr.weeks.m[p.eid], lr.weeks.n)),
+    cell(f0(sts),'Starts'),
+    cell(wks?pct1(sts/wks):'·','Start rate'),
+    cell(seasonsHeld,'Seasons held'),
+    cell(frs,'Franchises'),
+    cell(trN||'·','Trades involved'),
+  ].join('');
+  const val = [
+    cell(d&&d.usd?'$'+d.usd:'·','Lifetime auction $', d&&d.usd?rkChip(lr.usd.m[p.eid], lr.usd.n):''),
+    cell(d&&d.peak?'$'+d.peak.bid:'·', d&&d.peak?`Peak price · ${d.peak.s}`:'Peak price'),
+    cell(d?d.n:'·','Times drafted'),
+    cell(d?signed(d.par,f1):'·','Career draft PAR', d?rkChip(lr.dpar.m[p.eid], lr.dpar.n):''),
+  ].join('');
+  const perf = [
+    cell(f1(p.afflPts),'AFFL pts under custody', rkChip(lr.afflPts.m[p.eid], lr.afflPts.n)),
+    cell(wks?f1(p.afflPts/wks):'·','Pts / custody week'),
+    cell(bw?f1(bw.v):'·', bw?`Best started reg-season wk · ${bw.s} W${bw.w}`:'Best started week (reg)', bw?rkChip(lr.bwk.m[String(pi)], lr.bwk.n):''),
+    cell(bench!=null?f1(bench):'·','Bench pts left (reg, 2018+)'),
+  ].join('');
+  return `<h2 class="sect">AFFL résumé <span class="sub">ranks are all-time among every player the league has held</span></h2>
+  <div class="grid g3">
+    <div class="card"><div class="kicker">Ownership</div><div class="rgrid">${own}</div></div>
+    <div class="card"><div class="kicker">Draft value</div><div class="rgrid">${val}</div></div>
+    <div class="card"><div class="kicker">Production</div><div class="rgrid">${perf}</div></div>
+  </div>`;
+}
+
+function seasonTableHtml(pi, pos, p){
+  const rows = (pctPools().rowsByPi.get(pi)||[]).slice().sort((a,b)=>a[SCOL.s]-b[SCOL.s]);
+  if(!rows.length) return '';
+  const custByY = {};
+  (p?p.stints:[]).forEach(st=>{ const o=custByY[st.s]=custByY[st.s]||{w:0,fids:new Set()}; o.w+=st.weeks; o.fids.add(st.fid); });
+  const isQB=pos==='QB', isK=pos==='K', isRec=pos==='WR'||pos==='TE', isRB=pos==='RB';
+  const head = `<tr><th class="l">Year</th><th class="l">Team</th><th>G</th>
+    ${isQB?'<th>Cmp</th><th>Att</th><th>PaYd</th><th>PaTD</th><th>INT</th><th>Sk</th><th>Car</th><th>RuYd</th><th>RuTD</th>':''}
+    ${isRB?'<th>Car</th><th>RuYd</th><th>YPC</th><th>RuTD</th><th>Tgt</th><th>Rec</th><th>ReYd</th><th>ReTD</th>':''}
+    ${isRec?'<th>Tgt</th><th>Rec</th><th>ReYd</th><th>ReTD</th><th title="average depth of target">aDOT</th><th title="share of team targets (weekly avg)">Tgt%</th><th>Car</th><th>RuYd</th>':''}
+    ${isK?'<th>FGM</th><th>FGA</th><th>FG%</th><th>XPM</th><th>XPA</th>':''}
+    ${!isK?'<th title="fumbles lost">FmL</th>':''}
+    <th>FP</th><th>FP/G</th><th title="Expected FP, xfp_v2 (ffopportunity canon, AFFL-rescored)">xFP</th>
+    <th title="FP over expected, v2">FPOE</th>${!isK?'<th title="opponent-adjusted FPOE (adjfac_v1)">aFPOE</th>':''}
+    <th class="l" title="AFFL custody that season">AFFL</th></tr>`;
+  const body = rows.map(r=>{
+    const y=r[SCOL.s], cu=custByY[y];
+    const g=r[SCOL.g]||0;
+    return `<tr><td class="l num"><b>${y}</b></td><td class="l">${esc(r[SCOL.tm]||'')}</td><td>${g}</td>
+    ${isQB?`<td>${f0(r[SCOL.cmp])}</td><td>${f0(r[SCOL.att])}</td><td>${f0(r[SCOL.pyd])}</td><td>${f0(r[SCOL.ptd])}</td><td>${f0(r[SCOL.pint])}</td><td>${f0(r[SCOL.sk])}</td><td>${f0(r[SCOL.car])}</td><td>${f0(r[SCOL.ryd])}</td><td>${f0(r[SCOL.rtd])}</td>`:''}
+    ${isRB?`<td>${f0(r[SCOL.car])}</td><td>${f0(r[SCOL.ryd])}</td><td>${r[SCOL.car]?f2(r[SCOL.ryd]/r[SCOL.car]):'·'}</td><td>${f0(r[SCOL.rtd])}</td><td>${f0(r[SCOL.tgt])}</td><td>${f0(r[SCOL.rec])}</td><td>${f0(r[SCOL.recyd])}</td><td>${f0(r[SCOL.rectd])}</td>`:''}
+    ${isRec?`<td>${f0(r[SCOL.tgt])}</td><td>${f0(r[SCOL.rec])}</td><td>${f0(r[SCOL.recyd])}</td><td>${f0(r[SCOL.rectd])}</td><td>${f1(r[SCOL.adot])}</td><td>${r[SCOL.tshare]!=null?pct1(r[SCOL.tshare]):'·'}</td><td>${f0(r[SCOL.car])}</td><td>${f0(r[SCOL.ryd])}</td>`:''}
+    ${isK?`<td>${f0(r[SCOL.fgm])}</td><td>${f0(r[SCOL.fga])}</td><td>${r[SCOL.fga]?pct1(r[SCOL.fgm]/r[SCOL.fga]):'·'}</td><td>${f0(r[SCOL.xpm])}</td><td>${f0(r[SCOL.xpa])}</td>`:''}
+    ${!isK?`<td>${f0(r[SCOL.fuml])}</td>`:''}
+    <td><b>${f1(r[SCOL.fp])}</b></td><td>${f1(g?(r[SCOL.fp]||0)/g:null)}</td><td>${f1(r[SCOL.xfp2])}</td>
+    <td class="${cls(r[SCOL.fpoe2])}">${signed(r[SCOL.fpoe2],f1)}</td>
+    ${!isK?`<td class="${cls(r[SCOL.afpoe2])}">${signed(r[SCOL.afpoe2],f1)}</td>`:''}
+    <td class="l">${cu?[...cu.fids].map(f=>logoHtml(f,'',y)).join(' ')+` <span class="dim small">${cu.w}w</span>`
+      :(y<2018?'<span class="dim small" title="pre-2018: bench custody is unobservable — a rostered-but-never-started season leaves no trace">·</span>':'<span class="dim small">FA</span>')}</td></tr>`;
+  }).join('');
+  return `<h2 class="sect">Season by season <span class="sub">NFL regular season · nflverse weekly stats · std non-PPR</span></h2>
+  <div class="tblwrap"><table class="tbl"><thead>${head}</thead><tbody>${body}</tbody></table></div>`;
+}
+
+/* weekly game log table for one season */
+function logTableHtml(logs, s, pos){
+  const rows = logs.filter(r=>r.s===s);
+  if(!rows.length) return '<p class="dim">No logged weeks.</p>';
+  const isQB=pos==='QB', isK=pos==='K', isRec=pos==='WR'||pos==='TE', isRB=pos==='RB';
+  const affl = r=>{
+    if(!r.cust) return '<span class="dim small">FA</span>';
+    const st = r.cust.ev? '<span class="badge" title="pre-2018: lineup slot unobservable">held</span>'
+      : r.cust.st? '<span class="badge green">ST</span>'
+      : (r.fp!=null&&r.fp>=15? '<span class="badge red" title="left on the bench for a big game">BN</span>':'<span class="badge">BN</span>');
+    return `<span style="display:inline-flex;align-items:center;gap:6px">${logoHtml(r.cust.fid,'',r.s)}${st}</span>`;
+  };
+  const head = `<tr><th>Wk</th><th class="l">Tm</th><th class="l">Opp</th><th class="l" title="AFFL custody: franchise + started/bench">AFFL</th>
+    ${isQB?'<th>Cmp</th><th>Att</th><th>PaYd</th><th>PaTD</th><th>INT</th><th>Sk</th><th>Car</th><th>RuYd</th><th>RuTD</th>':''}
+    ${isRB?'<th>Car</th><th>RuYd</th><th>RuTD</th><th>Tgt</th><th>Rec</th><th>ReYd</th><th>ReTD</th>':''}
+    ${isRec?'<th>Tgt</th><th>Rec</th><th>ReYd</th><th>ReTD</th><th>Car</th><th>RuYd</th>':''}
+    ${isK?'<th>FGM</th><th>FGA</th><th>XPM</th><th>XPA</th>':''}
+    ${!isK?'<th title="fumbles lost">FmL</th>':''}
+    <th>FP</th><th>xFP</th><th>FPOE</th></tr>`;
+  const body = rows.map(r=>{
+    if(r.dnp) return `<tr class="dnp"><td>${r.w}</td><td class="l" colspan="2"><span class="dim">no NFL game — bye / inactive</span></td>
+      <td class="l">${affl(r)}</td><td class="l dim small" colspan="${(isQB?9:isRB?7:isRec?6:isK?4:0)+(isK?0:1)+3}">${r.cust&&r.cust.affl!=null?'AFFL applied: '+f1(r.cust.affl)+' pts':''}</td></tr>`;
+    return `<tr><td><b>${r.w}</b></td><td class="l dim small">${esc(r.tm||'')}</td><td class="l small">${oppCell(r.s, r.opp, pos)}</td>
+    <td class="l">${affl(r)}</td>
+    ${isQB?`<td>${f0(r.cmp)}</td><td>${f0(r.att)}</td><td>${f0(r.pyd)}</td><td>${f0(r.ptd)}</td><td>${f0(r.int)}</td><td>${f0(r.sk)}</td><td>${f0(r.car)}</td><td>${f0(r.ryd)}</td><td>${f0(r.rtd)}</td>`:''}
+    ${isRB?`<td>${f0(r.car)}</td><td>${f0(r.ryd)}</td><td>${f0(r.rtd)}</td><td>${f0(r.tgt)}</td><td>${f0(r.rec)}</td><td>${f0(r.recyd)}</td><td>${f0(r.rectd)}</td>`:''}
+    ${isRec?`<td>${f0(r.tgt)}</td><td>${f0(r.rec)}</td><td>${f0(r.recyd)}</td><td>${f0(r.rectd)}</td><td>${f0(r.car)}</td><td>${f0(r.ryd)}</td>`:''}
+    ${isK?`<td>${f0(r.fgm)}</td><td>${f0(r.fga)}</td><td>${f0(r.xpm)}</td><td>${f0(r.xpa)}</td>`:''}
+    ${!isK?`<td>${r.fuml?`<span class="neg">${r.fuml}</span>`:'0'}</td>`:''}
+    <td><b>${f1(r.fp)}</b></td><td class="dim">${f1(r.xfp)}</td><td class="${cls(r.fpoe)}">${signed(r.fpoe,f1)}</td></tr>`;
+  }).join('');
+  return `<div class="tblwrap"><table class="tbl"><thead>${head}</thead><tbody>${body}</tbody></table></div>`;
+}
+
+function drawSeasonArc(pi, eid){
+  const rows = (pctPools().rowsByPi.get(pi)||[]).slice().sort((a,b)=>a[SCOL.s]-b[SCOL.s]);
+  if(rows.length<2) return;
+  const ys = rows.map(r=>r[SCOL.s]);
+  const fpg = rows.map(r=>r[SCOL.g]?+((r[SCOL.fp]||0)/r[SCOL.g]).toFixed(2):null);
+  const xfpg = rows.map(r=>r[SCOL.g]&&r[SCOL.xfp2]?+((r[SCOL.xfp2]||0)/r[SCOL.g]).toFixed(2):null);
+  const bids = ys.map(y=>{ const d=S.drafts.find(d=>d.eid===eid&&d.s===y&&d.bid>0); return d?d.bid:null; });
+  mkChart('plarc', {
+    tooltip: ECTT({}),
+    legend: {top:0, textStyle:{color:'#9fb0c8', fontSize:11}},
+    grid: {left:50, right:52, top:34, bottom:26},
+    xAxis: ECX({data:ys}),
+    yAxis: [ECY(), ECY({splitLine:{show:false}, axisLabel:{formatter:'${value}', color:'#8fa2bd', fontFamily:'IBM Plex Mono', fontSize:10.5}})],
+    series: [
+      {name:'Auction $ paid', type:'bar', yAxisIndex:1, data:bids, barWidth:'42%',
+       itemStyle:{color:'rgba(255,196,0,.32)', borderColor:'#ffc400', borderWidth:1}},
+      {name:'FP / game', type:'line', data:fpg, smooth:.3, symbol:'circle', symbolSize:6,
+       lineStyle:{width:2.5, color:'#00a2ff'}, itemStyle:{color:'#00a2ff'}, connectNulls:true},
+      {name:'xFP / game', type:'line', data:xfpg, smooth:.3, symbol:'none',
+       lineStyle:{width:1.6, type:'dashed', color:'#c8ff00'}, itemStyle:{color:'#c8ff00'}, connectNulls:true},
+    ],
+  });
+}
+function drawWeeklyBeat(pi){
+  const logs = playerLogs(pi).filter(r=>!r.dnp);
+  if(logs.length<5) return;
+  const xs = logs.map(r=>r.s+' W'+r.w);
+  const marks = []; xs.forEach((x,i)=>{ if(i>0 && logs[i].s!==logs[i-1].s) marks.push({xAxis:i-0.5}); });
+  mkChart('plbeat', {
+    tooltip: ECTT({formatter: ps=>{
+      const i = ps[0].dataIndex, r = logs[i];
+      const cu = r.cust? `${esc(histName(r.s, r.cust.fid)||'')} · ${r.cust.ev?'held':r.cust.st?'started':'benched'}` : 'not AFFL-rostered';
+      return `<b>${r.s} Week ${r.w}</b> · ${esc(r.tm||'')}${r.opp?' v '+esc(r.opp):''}<br>FP <b>${f1(r.fp)}</b> · xFP ${f1(r.xfp)} · FPOE ${signed(r.fpoe,f1)}<br><span style="color:#8fa2bd">${cu}</span>`; }}),
+    grid: {left:46, right:16, top:26, bottom:30},
+    xAxis: ECX({data:xs, axisLabel:{interval:(i,v)=>v.endsWith(' W1'), formatter:v=>v.slice(0,4), fontSize:9.5}}),
+    yAxis: ECY(),
+    series: [
+      {name:'FP', type:'bar', barWidth:'62%',
+       data: logs.map(r=>({value:r.fp, itemStyle:{color: r.cust? (r.cust.st||r.cust.ev? fColor(r.cust.fid) : '#39445e') : '#20293c',
+         borderColor: r.cust&&!r.cust.st&&!r.cust.ev&&(r.fp||0)>=15? '#ff4d5e':'transparent', borderWidth: 1.4}})),
+       markLine:{silent:true, symbol:'none', label:{show:false}, lineStyle:{color:'#26314a', width:1}, data:marks}},
+      {name:'xFP', type:'line', data:logs.map(r=>r.xfp), symbol:'none', lineStyle:{width:1.4, color:'#c8ff00', opacity:.85}, z:3},
+    ],
+  });
+}
+
+let glSeason = null;
+function playerView(eid){
+  const p = PL[eid]; if(!p){ app.innerHTML='<div class="wrap"><p style="padding:40px 0">Unknown player.</p></div>'; return; }
+  const pi = EIDX[eid];
+  const pos = p.pos;
+  const hs = headshotUrl(p);
+  const cn = pi!=null? careerNfl().get(pi) : null;
+  const acc = teamAccent(p.team || (cn&&cn.tm));
+  const {html:strip, legend} = pi!=null? custodyMapHtml(pi) : {html:'',legend:''};
+  const drafted = S.drafts.filter(d=>d.eid===eid);
+  const draftRows = drafted.map(d=>`<tr><td class="l num">${d.s}</td><td class="l">${frLink(d.fid,d.s)}</td>
+    <td>${d.bid>0?'$'+d.bid:'#'+d.pick}</td><td class="l">${d.keeper?'<span class="badge blue">keeper</span>':''}</td>
+    <td>${f1(d.pts)}</td><td class="${cls(d.par)}">${signed(d.par,f1)}</td></tr>`).join('');
   const stintRows = p.stints.map(st=>`<tr>
     <td class="l num">${st.s}</td><td class="l">${frLink(st.fid, st.s)}</td>
     <td>Wk ${st.w0}–${st.w1}</td><td>${st.weeks}</td><td>${st.starts}</td>
     <td>${f1(st.pts)}</td><td class="${cls(st.par)}">${signed(st.par,f1)}</td>
     <td class="l dim small">${esc(st.acq||'')}</td></tr>`).join('');
-  const isQB = p.pos==='QB', isK = p.pos==='K';
-  const nflRows = p.nfl.map(n=>`<tr><td class="l num">${n.s}</td><td class="l">${esc(n.tm||'')}</td><td>${n.g}</td>
-    ${isQB?`<td>${f0(n.pyd)}</td><td>${f0(n.ptd)}</td><td>${f0(n.pint)}</td>`:''}
-    <td>${f0(n.car)}</td><td>${f0(n.ryd)}</td><td>${f0(n.rtd)}</td>
-    <td>${f0(n.tgt)}</td><td>${f0(n.rec)}</td><td>${f0(n.recyd)}</td><td>${f0(n.rectd)}</td>
-    <td>${f1(n.fp)}</td><td>${f1(n.xfp2)}</td><td class="${cls(n.fpoe2)}">${signed(n.fpoe2,f1)}</td>
-    <td class="dim ${cls(n.fpoe)}">${signed(n.fpoe,f1)}</td></tr>`).join('');
-  const drafted = S.drafts.filter(d=>d.eid===eid);
-  const draftRows = drafted.map(d=>`<tr><td class="l num">${d.s}</td><td class="l">${frLink(d.fid,d.s)}</td>
-    <td>${d.bid>0?'$'+d.bid:'#'+d.pick}</td><td class="l">${d.keeper?'<span class="badge blue">keeper</span>':''}</td>
-    <td>${f1(d.pts)}</td><td class="${cls(d.par)}">${signed(d.par,f1)}</td></tr>`).join('');
+  const myTrades = S.trades.filter(t=>Object.values(t.sides).some(l=>l.includes(eid))).sort((a,b)=>b.s-a.s||b.week-a.week);
+  const hasNfl = pi!=null && (pctPools().rowsByPi.get(pi)||[]).length>0;
+  const seasonsWith = hasNfl? [...new Set((pctPools().rowsByPi.get(pi)||[]).map(r=>r[SCOL.s]))].sort((a,b)=>b-a) : [];
+
   app.innerHTML = `<div class="wrap">
-    <div class="hero" style="display:flex;gap:22px;align-items:center;flex-wrap:wrap">
-      ${p.img?`<img src="${esc(p.img)}" alt="" style="width:118px;height:86px;object-fit:cover;object-position:top;border-radius:14px;border:1px solid var(--rule);background:var(--card2)" onerror="this.style.display='none'">`:''}
-      <div><div class="kicker">${esc(p.pos||'')} ${p.team?'· '+esc(p.team):''} ${p.college?'· '+esc(p.college):''} ${p.rookie?'· rookie '+p.rookie:''}</div>
-      <h1 class="display" style="font-size:clamp(30px,5vw,52px)">${esc(p.name)}</h1>
-      <div class="statline">
-        <div class="stat"><div class="v">${f1(p.afflPts)}</div><div class="l">AFFL pts under custody</div></div>
-        <div class="stat"><div class="v">${p.stints.reduce((a,s)=>a+s.weeks,0)}</div><div class="l">Custody weeks</div></div>
-        <div class="stat"><div class="v">${p.stints.reduce((a,s)=>a+s.starts,0)}</div><div class="l">Starts</div></div>
-        <div class="stat"><div class="v">${[...new Set(p.stints.map(s=>s.fid))].length}</div><div class="l">Franchises</div></div>
-      </div></div></div>
-    ${p.stints.length===0?`<div class="notice" style="margin-top:8px">Drafted into the AFFL but never held for an observable roster week. Pre-2018, ESPN's historical rosters omit players dropped early — the draft pick below is this player's entire observable league record. Name resolved from ESPN's public player database.</div>`:`
-    <h2 class="sect">Custody map <span class="sub">columns are NFL weeks · dot = started · pre-2018 bench custody is unobservable</span></h2>
+    <div class="phero" style="background:linear-gradient(120deg, ${acc}26, var(--card) 58%);border-color:${acc}55">
+      ${hs?`<img class="hshot" src="${esc(hs)}" alt="" onerror="this.style.display='none'">`:''}
+      <div style="min-width:0;flex:1">
+        <div class="kicker">${esc(pos||'')} ${p.team?'· '+esc(p.team):''} ${p.college?'· '+esc(p.college):''} ${p.rookie?'· rookie '+p.rookie:''}
+          ${p.draftOnly?' <span class="badge yellow">draft-only identity</span>':''}${p.dst?' <span class="badge blue">team defense</span>':''}</div>
+        <h1 class="display" style="font-size:clamp(30px,5vw,52px)">${esc(p.name)}</h1>
+        <div class="statline">
+          <div class="stat"><div class="v" style="color:${acc==='#31405e'?'var(--ink)':acc}">${f1(p.afflPts)}</div><div class="l">AFFL pts under custody</div></div>
+          <div class="stat"><div class="v">${p.stints.reduce((a,s)=>a+s.weeks,0)}</div><div class="l">Custody weeks</div></div>
+          <div class="stat"><div class="v">${p.stints.reduce((a,s)=>a+s.starts,0)}</div><div class="l">Starts</div></div>
+          <div class="stat"><div class="v">${[...new Set(p.stints.map(s=>s.fid))].length}</div><div class="l">Franchises</div></div>
+          ${cn?`<div class="stat"><div class="v">${f0(cn.g)}</div><div class="l">NFL games 14–${String(LAST).slice(2)}</div></div>
+          <div class="stat"><div class="v">${f1(cn.fp)}</div><div class="l">NFL FP (std)</div></div>
+          <div class="stat"><div class="v ${cls(cn.fpoe2)}">${signed(cn.fpoe2,f1)}</div><div class="l">Career FPOE</div></div>`:''}
+        </div>
+      </div></div>
+    ${p.stints.length===0?`<div class="notice" style="margin-top:14px">Drafted into the AFFL but never held for an observable roster week. Pre-2018, ESPN's historical rosters omit players dropped early — the draft record below is this player's entire observable league footprint.${p.draftOnly?' Name resolved from ESPN’s public player database.':''}</div>`:resumeHtml(p, pi)}
+    ${strip?`<h2 class="sect">Custody map <span class="sub">columns are NFL weeks · dot = started · pre-2018 bench custody is unobservable</span></h2>
     <div class="card" style="overflow-x:auto"><div class="cust" style="min-width:640px">${strip}</div></div>
-    <div class="legend">${legend}</div>`}
+    <div class="legend">${legend}</div>`:''}
     <div class="grid g2" style="margin-top:22px">
-      <div><h2 class="sect" style="margin-top:0">AFFL custody stints</h2>
-      <div class="tblwrap"><table class="tbl"><thead><tr><th class="l">Year</th><th class="l">Franchise</th><th>Span</th><th>Wks</th><th>Starts</th><th>Pts</th><th>PAR</th><th class="l">Acq</th></tr></thead><tbody>${stintRows}</tbody></table></div></div>
+      <div><h2 class="sect" style="margin-top:0">Custody stints</h2>
+      ${stintRows?`<div class="tblwrap"><table class="tbl"><thead><tr><th class="l">Year</th><th class="l">Franchise</th><th>Span</th><th>Wks</th><th>Starts</th><th>Pts</th><th>PAR</th><th class="l">Acq</th></tr></thead><tbody>${stintRows}</tbody></table></div>`:'<p class="dim">No observable custody weeks.</p>'}</div>
       <div><h2 class="sect" style="margin-top:0">Draft history</h2>
       ${draftRows?`<div class="tblwrap"><table class="tbl"><thead><tr><th class="l">Year</th><th class="l">By</th><th>Price</th><th class="l"></th><th>Pts for them</th><th>Draft PAR</th></tr></thead><tbody>${draftRows}</tbody></table></div>`:'<p class="dim">Never drafted — waiver/FA custody only.</p>'}</div>
     </div>
-    ${p.dst?'':`<h2 class="sect">NFL production by season <span class="sub">nflverse weekly stats · std non-PPR · xFP v2 (ffopportunity canon) · FPOE v1 shown for comparison</span></h2>
-    <div class="tblwrap"><table class="tbl"><thead><tr><th class="l">Year</th><th class="l">Team</th><th>G</th>
-      ${isQB?'<th>PaYd</th><th>PaTD</th><th>INT</th>':''}
-      <th>Car</th><th>RuYd</th><th>RuTD</th><th>Tgt</th><th>Rec</th><th>ReYd</th><th>ReTD</th>
-      <th>FP</th><th title="Expected FP, xfp_v2 (ffopportunity CP+xYAC, AFFL-rescored)">xFP</th><th title="FP over expected, v2">FPOE</th>
-      <th class="dim" title="Legacy bucket-model FPOE (xfp_v1), kept for comparison">FPOE v1</th></tr></thead><tbody>${nflRows||''}</tbody></table></div>`}
-    ${EIDX[eid]!=null?`<div class="presets" style="margin-top:18px">
-      <a class="chip" href="#/explore?q=${encState(Object.assign(defState(),{pq:p.name,gr:'weeks',sc:'rostered',ms:['affl','fp','tgt','car'],sort:'affl',lim:100}))}">▦ Every custody week</a>
-      <a class="chip" href="#/compare?p=${EIDX[eid]}">⇄ Compare with…</a>
+    ${myTrades.length?`<h2 class="sect">Trades involving ${esc(p.name)} <span class="sub">value = AFFL points rest-of-season (trade_v1)</span></h2>
+    <div class="grid g2">${myTrades.map(t=>tradeCard(t)).join('')}</div>`:''}
+    ${hasNfl?`
+    <h2 class="sect">NFL profile <span class="sub">percentile vs qualified ${esc(pos)} peers · pick a scope</span></h2>
+    <div class="presets" id="pctchips">${['career',...seasonsWith].map((s,i)=>`<span class="chip ${i===(seasonsWith.length?1:0)?'on lime':''}" data-pct="${s}">${s==='career'?'Career':s}</span>`).join('')}</div>
+    <div class="grid g2" style="margin-top:10px"><div class="card" id="pctwrap"></div>
+      <div><div class="card chartbox" style="padding:12px 10px 6px"><div id="plarc" style="width:100%;height:252px"></div></div>
+      <p class="dim small" style="margin-top:6px">Blue = FP/game · dashed lime = expected FP/game (xfp_v2) · gold bars = AFFL auction price paid that year.</p></div></div>
+    <h2 class="sect">Every week, every season <span class="sub">bar = weekly FP, colored by AFFL custody · lime = expected</span></h2>
+    ${chartBox('plbeat', 250)}
+    <div class="legend" style="margin-top:8px"><span><span class="sw" style="background:#20293c"></span>not rostered</span><span><span class="sw" style="background:#39445e"></span>on an AFFL bench</span><span><span class="sw" style="background:#37d67a"></span>in a lineup (franchise color)</span><span><span class="sw" style="background:#0e1119;border:1.4px solid #ff4d5e"></span>benched 15+ FP game</span></div>
+    ${seasonTableHtml(pi, pos, p)}
+    <h2 class="sect">Game logs <span class="sub">NFL regular season · custody + free-agency weeks</span></h2>
+    <div class="presets" id="glchips">${seasonsWith.map((s,i)=>`<span class="chip ${i===0?'on':''}" data-gls="${s}">${s}</span>`).join('')}</div>
+    <div id="glwrap"><p class="dim small" style="padding:16px 4px">loading game logs…</p></div>`
+    : p.dst? `<h2 class="sect">Weekly custody log <span class="sub">D/ST production exists at the league grain — AFFL applied points while rostered</span></h2>
+    <div class="presets" id="glchips"></div><div id="glwrap"></div>`
+    : ''}
+    ${pi!=null?`<div class="presets" style="margin-top:18px">
+      <a class="chip" href="#/explore?q=${encState(Object.assign(defState(),{pq:p.name,gr:'weeks',sc:'rostered',ms:['affl','fp','tgt','car'],sort:'affl',lim:100}))}">▦ Every custody week in Explore</a>
+      <a class="chip" href="#/compare?p=${pi}">⇄ Compare with…</a>
     </div>`:''}
   </div>`;
+
+  if(hasNfl){
+    const drawPct = scope=>{
+      const rows = pctPools().rowsByPi.get(pi)||[];
+      let agg;
+      if(scope==='career'){ agg=aggInit(); rows.forEach(r=>aggAdd(agg,r)); }
+      else { agg=aggInit(); rows.filter(r=>r[SCOL.s]===+scope).forEach(r=>aggAdd(agg,r)); }
+      $('#pctwrap').innerHTML = `<div class="kicker" style="margin-bottom:10px">${scope==='career'?'Career profile':scope+' profile'} <span class="dim">· ${agg.g||0} games</span></div>`
+        + pctBarsHtml(pos, agg, scope==='career'?'career':String(+scope), scope==='career');
+    };
+    app.querySelectorAll('[data-pct]').forEach(c=>c.onclick=()=>{
+      app.querySelectorAll('[data-pct]').forEach(x=>x.classList.remove('on','lime'));
+      c.classList.add('on','lime'); drawPct(c.dataset.pct); });
+    drawPct(seasonsWith.length? String(seasonsWith[0]) : 'career');
+    drawSeasonArc(pi, eid);
+    const drawLogs = ()=>{
+      const logs = playerLogs(pi);
+      const seasons = [...new Set(logs.map(r=>r.s))].sort((a,b)=>b-a);
+      if(!seasons.length){ $('#glwrap').innerHTML='<p class="dim">No logged weeks.</p>'; return; }
+      if(!glSeason || !seasons.includes(glSeason)) glSeason = seasons[0];
+      $('#glchips').innerHTML = seasons.map(s=>`<span class="chip ${s===glSeason?'on':''}" data-gls="${s}">${s}</span>`).join('');
+      $('#glwrap').innerHTML = logTableHtml(logs, glSeason, pos)
+        + `<p class="dim small" style="margin-top:8px">FP is nflverse std non-PPR (fumbles included); xFP/FPOE are xfp_v2 (no fumble/kicking term). ● on the opponent marks defense-vs-${esc(pos)} generosity that season. Pre-2018 AFFL columns show starters only — bench custody is unobservable.</p>`;
+      $('#glchips').querySelectorAll('[data-gls]').forEach(c=>c.onclick=()=>{ glSeason=+c.dataset.gls; drawLogs(); });
+      drawWeeklyBeat(pi);
+    };
+    ensureGL(ok=>{
+      if(location.hash.indexOf('#/p/'+eid)!==0) return;   // navigated away mid-fetch
+      if(!ok){ $('#glwrap').innerHTML = '<div class="notice">Game logs could not be fetched — custody weeks are still queryable in <a href="#/explore">Explore</a>.</div>'; drawWeeklyBeat(pi); return; }
+      drawLogs();
+    });
+  } else if(p.dst && pi!=null){
+    const C = COL;
+    const mine = E.rows.filter(r=>r[C.p]===pi);
+    const seasons = [...new Set(mine.map(r=>r[C.s]))].sort((a,b)=>b-a);
+    if(seasons.length){
+      if(!glSeason || !seasons.includes(glSeason)) glSeason = seasons[0];
+      const drawDst = ()=>{
+        $('#glchips').innerHTML = seasons.map(s=>`<span class="chip ${s===glSeason?'on':''}" data-gls="${s}">${s}</span>`).join('');
+        const rows = mine.filter(r=>r[C.s]===glSeason).sort((a,b)=>a[C.w]-b[C.w]);
+        $('#glwrap').innerHTML = `<div class="tblwrap"><table class="tbl"><thead><tr><th>Wk</th><th class="l">Rostered by</th><th class="l">Status</th><th>AFFL pts</th></tr></thead><tbody>
+          ${rows.map(r=>{ const fid=E.franchises[r[C.f]][0];
+            return `<tr><td><b>${r[C.w]}</b></td><td class="l">${frLink(fid, r[C.s])}</td>
+            <td class="l">${r[C.ev]?'<span class="badge">held</span>':r[C.st]?'<span class="badge green">ST</span>':'<span class="badge">BN</span>'}</td>
+            <td><b>${f1(r[C.affl])}</b></td></tr>`;}).join('')}</tbody></table></div>
+          <p class="dim small" style="margin-top:8px">NFL box stats for team defenses are not modeled — D/ST value is scored by ESPN and tracked here at the custody grain.</p>`;
+        $('#glchips').querySelectorAll('[data-gls]').forEach(c=>c.onclick=()=>{ glSeason=+c.dataset.gls; drawDst(); });
+      };
+      drawDst();
+    }
+  }
+}
+
+/* NFL-only player page (never AFFL-rostered; reached from Leaderboards) */
+function nflPlayerView(pi){
+  const pl = E.players[pi];
+  if(!pl){ app.innerHTML='<div class="wrap"><p style="padding:40px 0">Unknown player.</p></div>'; return; }
+  if(pl[0]!=null && PL[pl[0]]){ playerView(pl[0]); return; }
+  const pos = EPOS[pi], nm = ENAME[pi];
+  const cn = careerNfl().get(pi);
+  const rows = (pctPools().rowsByPi.get(pi)||[]);
+  const seasonsWith = [...new Set(rows.map(r=>r[SCOL.s]))].sort((a,b)=>b-a);
+  const acc = teamAccent(cn&&cn.tm);
+  app.innerHTML = `<div class="wrap">
+    <div class="phero" style="background:linear-gradient(120deg, ${acc}26, var(--card) 58%);border-color:${acc}55">
+      ${pl[4]?`<img class="hshot" src="${esc(pl[4])}" alt="" onerror="this.style.display='none'">`:''}
+      <div style="min-width:0;flex:1">
+        <div class="kicker">${esc(pos||'')} ${cn&&cn.tm?'· '+esc(cn.tm):''} · <span class="badge" style="vertical-align:1px" title="in the NFL pool for leaderboards; never on an AFFL roster">never AFFL-rostered</span></div>
+        <h1 class="display" style="font-size:clamp(30px,5vw,52px)">${esc(nm)}</h1>
+        <div class="statline">
+          ${cn?`<div class="stat"><div class="v">${cn.s0===cn.s1?cn.s0:cn.s0+'–'+cn.s1}</div><div class="l">Seasons</div></div>
+          <div class="stat"><div class="v">${f0(cn.g)}</div><div class="l">Games</div></div>
+          <div class="stat"><div class="v">${f1(cn.fp)}</div><div class="l">FP (std)</div></div>
+          <div class="stat"><div class="v ${cls(cn.fpoe2)}">${signed(cn.fpoe2,f1)}</div><div class="l">Career FPOE</div></div>`:''}
+        </div></div></div>
+    <div class="notice" style="margin-top:14px">This player was never rostered in the AFFL — twelve drafts, ${f0(S.players.length)} held identities, and nobody bit. NFL production only; weekly game logs are kept for league-held players.</div>
+    ${rows.length?`<h2 class="sect">NFL profile <span class="sub">percentile vs qualified ${esc(pos)} peers</span></h2>
+    <div class="presets" id="pctchips">${['career',...seasonsWith].map((s,i)=>`<span class="chip ${i===(seasonsWith.length?1:0)?'on lime':''}" data-pct="${s}">${s==='career'?'Career':s}</span>`).join('')}</div>
+    <div class="grid g2" style="margin-top:10px"><div class="card" id="pctwrap"></div>
+      <div><div class="card chartbox" style="padding:12px 10px 6px"><div id="plarc" style="width:100%;height:252px"></div></div></div></div>
+    ${seasonTableHtml(pi, pos, null)}`:''}
+    <div class="presets" style="margin-top:18px"><a class="chip" href="#/compare?p=${pi}">⇄ Compare with…</a>
+      <a class="chip" href="#/boards?${new URLSearchParams({m:'fp',pos:pos||''}).toString()}">▤ ${esc(pos||'')} leaderboards</a></div>
+  </div>`;
+  if(rows.length){
+    const drawPct = scope=>{
+      let agg=aggInit();
+      (scope==='career'? rows : rows.filter(r=>r[SCOL.s]===+scope)).forEach(r=>aggAdd(agg,r));
+      $('#pctwrap').innerHTML = `<div class="kicker" style="margin-bottom:10px">${scope==='career'?'Career profile':scope+' profile'} <span class="dim">· ${agg.g||0} games</span></div>`
+        + pctBarsHtml(pos, agg, scope==='career'?'career':String(+scope), scope==='career');
+    };
+    app.querySelectorAll('[data-pct]').forEach(c=>c.onclick=()=>{
+      app.querySelectorAll('[data-pct]').forEach(x=>x.classList.remove('on','lime'));
+      c.classList.add('on','lime'); drawPct(c.dataset.pct); });
+    drawPct(seasonsWith.length? String(seasonsWith[0]) : 'career');
+    drawSeasonArc(pi, -1);
+  }
 }
 
 /* ---------------- SEASONS ---------------- */
@@ -1642,7 +2273,7 @@ function playerCell(pi, seasonCtx){
   const p = E.players[pi]||[];
   const nm = esc(p[1]||'?');
   if(p[5]===1 && p[0]!=null) return `<a href="#/p/${p[0]}">${nm}</a> <span class="pos">${esc(p[2]||'')}</span>`;
-  return `${nm} <span class="pos">${esc(p[2]||'')}</span> <span class="badge" title="never AFFL-rostered">NFL</span>`;
+  return `<a href="#/pn/${pi}">${nm}</a> <span class="pos">${esc(p[2]||'')}</span> <span class="badge" title="never AFFL-rostered">NFL</span>`;
 }
 function boardsView(qs){
   const q = new URLSearchParams(qs||'');
@@ -1791,7 +2422,7 @@ function compareView(qs){
       <a class="chip" style="position:absolute;top:10px;right:10px" href="${cLink(sel.filter(x=>x!==pi))}" title="remove">✕</a>
       <div style="display:flex;gap:12px;align-items:center">
         ${p[4]?`<img src="${esc(p[4])}" alt="" style="width:72px;height:54px;object-fit:cover;object-position:top;border-radius:10px;border:1px solid var(--rule)" onerror="this.style.display='none'">`:''}
-        <div><div style="font-family:'Barlow Condensed';font-weight:700;font-size:20px">${p[5]===1&&p[0]!=null?`<a href="#/p/${p[0]}">${esc(p[1])}</a>`:esc(p[1])}</div>
+        <div><div style="font-family:'Barlow Condensed';font-weight:700;font-size:20px"><a href="${plRoute(pi)}">${esc(p[1])}</a></div>
         <div class="dim small">${esc(p[2]||'')}${p[5]!==1?' · never AFFL-rostered':''}</div></div></div>
       <div class="statline" style="margin-top:10px">
         <div class="stat"><div class="v">${f0(c.g)}</div><div class="l">G</div></div>

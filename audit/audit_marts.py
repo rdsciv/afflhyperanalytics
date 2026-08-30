@@ -296,6 +296,98 @@ for r in L['teamSeason']:
 if lmis == 0: ok(f"luck-layer team-season records equal official ESPN records for all {len(L['teamSeason'])} rows")
 if 'scope' in S['records']: ok(f"records scope tag: {S['records']['scope']}")
 
+# ---------- N. gamelogs mart: partition + reconciliation vs seasonRows ----------
+# gamelogs (non-custody weeks) + explore custody played-weeks must exactly
+# partition every rostered player's NFL season: week counts and FP sums per
+# (player, season) must reproduce seasonRows (built independently from the
+# warehouse season aggregation).
+G = json.load(open('data/marts/gamelogs_data.json'))
+GC = {c: i for i, c in enumerate(G['cols'])}
+GCC = {c: i for i, c in enumerate(G['custCols'])}
+EC = {c: i for i, c in enumerate(E['cols'])}
+SC = {c: i for i, c in enumerate(E['seasonCols'])}
+
+gl_keys = set()
+dups = 0
+for r in G['rows']:
+    k = (r[GC['p']], r[GC['s']], r[GC['w']])
+    if k in gl_keys: dups += 1
+    gl_keys.add(k)
+if dups: bad(f"gamelogs grain not unique: {dups} duplicate (p,s,w) rows")
+else: ok(f"gamelogs grain unique on (p,s,w): {len(G['rows'])} rows")
+
+cust_keys = set()
+cust_played = defaultdict(int)      # (p,s) -> played custody weeks
+cust_fp = defaultdict(float)
+for r in E['rows']:
+    k = (r[EC['p']], r[EC['s']], r[EC['w']])
+    cust_keys.add(k)
+    if r[EC['fp']] is not None:
+        cust_played[(k[0], k[1])] += 1
+        cust_fp[(k[0], k[1])] += r[EC['fp']]
+overlap = gl_keys & cust_keys
+if overlap: bad(f"gamelogs rows overlap custody weeks: {len(overlap)} keys, e.g. {sorted(overlap)[:3]}")
+else: ok("gamelogs rows are disjoint from custody weeks (0 overlap)")
+
+bad_cust = [r for r in G['custRows'] if (r[GCC['p']], r[GCC['s']], r[GCC['w']]) not in cust_keys]
+if bad_cust: bad(f"{len(bad_cust)} custody-extra rows have no matching custody week")
+else: ok(f"all {len(G['custRows'])} custody-extra rows join a real custody week")
+
+for name, rows_, cix in (("gamelogs", G['rows'], GC), ("custExtras", G['custRows'], GCC)):
+    viol = 0
+    for r in rows_:
+        cmp_, att_ = r[cix['cmp']] or 0, r[cix['att']] or 0
+        fgm_, fga_ = r[cix['fgm']] or 0, r[cix['fga']] or 0
+        xpm_, xpa_ = r[cix['xpm']] or 0, r[cix['xpa']] or 0
+        if cmp_ > att_ or fgm_ > fga_ or xpm_ > xpa_: viol += 1
+    if viol: bad(f"{name}: {viol} rows violate cmp<=att / fgm<=fga / xpm<=xpa")
+    else: ok(f"{name}: kicking/passing count sanity holds for all rows")
+
+gl_weeks = defaultdict(int)
+gl_fp = defaultdict(float)
+for r in G['rows']:
+    gl_weeks[(r[GC['p']], r[GC['s']])] += 1
+    if r[GC['fp']] is not None: gl_fp[(r[GC['p']], r[GC['s']])] += r[GC['fp']]
+
+ro1 = {i for i, p in enumerate(E['players']) if len(p) > 5 and p[5] == 1 and p[3] != 1}  # rostered, non-D/ST
+g_bad, fp_bad, checked = 0, 0, 0
+worst = None
+for r in E['seasonRows']:
+    pi, s = r[SC['p']], r[SC['s']]
+    if pi not in ro1: continue
+    checked += 1
+    g_expect = r[SC['g']] or 0
+    g_have = cust_played[(pi, s)] + gl_weeks[(pi, s)]
+    if g_have != g_expect:
+        g_bad += 1
+        if g_bad <= 3: bad(f"gamelog week-count mismatch p={pi} ({E['players'][pi][1]}) s={s}: custody {cust_played[(pi,s)]} + logs {gl_weeks[(pi,s)]} != seasonRows g {g_expect}")
+    fp_expect = r[SC['fp']] or 0.0
+    fp_have = cust_fp[(pi, s)] + gl_fp[(pi, s)]
+    d = abs(fp_have - fp_expect)
+    if d > 1.0:
+        fp_bad += 1
+        if fp_bad <= 3: bad(f"gamelog FP mismatch p={pi} ({E['players'][pi][1]}) s={s}: {fp_have:.1f} vs seasonRows {fp_expect:.1f}")
+    if worst is None or d > worst[0]: worst = (d, pi, s)
+if g_bad == 0: ok(f"custody+gamelog weeks exactly partition seasonRows g for all {checked} rostered player-seasons")
+else: bad(f"{g_bad} rostered player-seasons fail the week partition")
+if fp_bad == 0: ok(f"custody+gamelog FP reproduces seasonRows fp for all {checked} rostered player-seasons (worst rounding drift {worst[0]:.2f})")
+else: bad(f"{fp_bad} rostered player-seasons fail FP reconciliation beyond rounding tolerance 1.0")
+
+# reverse containment: every gamelog/custody played week's player-season must exist in seasonRows
+sr_keys = {(r[SC['p']], r[SC['s']]) for r in E['seasonRows']}
+orphans = [k for k in gl_weeks if k not in sr_keys]
+if orphans: bad(f"{len(orphans)} gamelog player-seasons missing from seasonRows, e.g. {orphans[:5]}")
+else: ok("every gamelog player-season exists in seasonRows")
+
+gl_used = ['p','s','w','tm','opp','fp','xfp2','fpoe2','cmp','att','pyd','ptd','int','sk','car','ryd','rtd','tgt','rec','recyd','rectd','fuml','fgm','fga','xpm','xpa']
+missing = [k for k in gl_used if k not in G['cols']]
+if missing: bad(f"gamelogs cols MISSING keys used by app.js: {missing}")
+else: ok("all gamelog cols used by app.js exist")
+scol_new = ['cmp','att','sk','fuml','fgm','fga','xpm','xpa']
+missing = [k for k in scol_new if k not in E['seasonCols']]
+if missing: bad(f"seasonCols MISSING new player-page keys: {missing}")
+else: ok("seasonCols carry the new player-page keys (cmp/att/sk/fuml/kicking)")
+
 print("\n==== SUMMARY ====")
 for m in OK: print("ok  " + m)
 print(f"\n{len(BAD)} problems found")

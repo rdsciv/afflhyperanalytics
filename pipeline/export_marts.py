@@ -44,7 +44,7 @@ ax.row_factory = sqlite3.Row
 con = duckdb.connect(str(ROOT / "data" / "nfl.duckdb"))
 
 POS = {1: "QB", 2: "RB", 3: "WR", 4: "TE", 5: "K", 16: "D/ST"}
-DATA_VERSION = "2026.08.30.2"
+DATA_VERSION = "2026.08.30.3"
 
 
 def r1(x):
@@ -401,27 +401,8 @@ WHERE d.g > 1
 """)
 
 # --------------------------------------------------------- player mart -------
-pw_nfl = con.execute("""
-SELECT w.gsis_id, w.season, COUNT(*) AS g, SUM(w.std_fp) AS fp,
-       SUM(w.passing_yards) AS pyd, SUM(w.passing_tds) AS ptd, SUM(w.passing_interceptions) AS pint,
-       SUM(w.carries) AS car, SUM(w.rushing_yards) AS ryd, SUM(w.rushing_tds) AS rtd,
-       SUM(w.targets) AS tgt, SUM(w.receptions) AS rec, SUM(w.receiving_yards) AS recyd,
-       SUM(w.receiving_tds) AS rectd, ANY_VALUE(w.team) AS team,
-       SUM(x.xfp) AS xfp, SUM(x.fpoe) AS fpoe,
-       SUM(x2.xfp2) AS xfp2, SUM(x2.fpoe2) AS fpoe2
-FROM fact_player_week w
-LEFT JOIN fact_player_week_xfp x USING (gsis_id, season, week)
-LEFT JOIN fact_player_week_xfp2 x2 USING (gsis_id, season, week)
-GROUP BY 1, 2
-""").fetchall()
-nfl_seasons_by_gsis = defaultdict(list)
-for r in pw_nfl:
-    nfl_seasons_by_gsis[r[0]].append({
-        "s": r[1], "g": r[2], "fp": r1(r[3]), "pyd": r[4], "ptd": r[5], "pint": r[6],
-        "car": r[7], "ryd": r[8], "rtd": r[9], "tgt": r[10], "rec": r[11],
-        "recyd": r[12], "rectd": r[13], "tm": r[14], "xfp": r1(r[15]), "fpoe": r1(r[16]),
-        "xfp2": r1(r[17]), "fpoe2": r1(r[18])})
-
+# NOTE: per-player NFL season lines moved out of savant (formerly players[].nfl);
+# the app reads explore seasonRows instead (richer columns, single source).
 bridge_rows = {r[0]: r[1] for r in con.execute(
     "SELECT espn_player_id, gsis_id FROM bridge_player_external WHERE ever_rostered=1").fetchall()}
 
@@ -439,8 +420,6 @@ for eid, gsis in bridge_rows.items():
         "rookie": meta.get("rookie"), "team": meta.get("team"),
         "stints": [{k: v for k, v in st.items() if k != "eid"} for st in sts],
         "afflPts": total_pts,
-        "nfl": sorted([x for x in nfl_seasons_by_gsis.get(gsis, []) if 2014 <= x["s"] <= 2025],
-                      key=lambda x: x["s"]) if gsis else [],
     })
 # draft-only identities: drafted (or traded) players who never appear in any
 # held snapshot — mostly 2014-2017 drafted-then-cut players whose names ESPN's
@@ -458,7 +437,7 @@ for eid in sorted(draft_eids - known_eids):
         "name": (entry or {}).get("name") or ("ESPN id %d" % eid),
         "pos": (entry or {}).get("pos"),
         "dst": False, "img": None, "college": None, "rookie": None, "team": None,
-        "stints": [], "afflPts": 0.0, "nfl": [], "draftOnly": True,
+        "stints": [], "afflPts": 0.0, "draftOnly": True,
     })
     patched += 1
 players_mart.sort(key=lambda x: -(x["afflPts"] or 0))
@@ -601,7 +580,10 @@ SELECT w.gsis_id, ANY_VALUE(w.name) AS name, ANY_VALUE(w.position) AS position,
        SUM(w.passing_yards) AS pyd, SUM(w.passing_tds) AS ptd, SUM(w.passing_interceptions) AS pint,
        SUM(w.carries) AS car, SUM(w.rushing_yards) AS ryd, SUM(w.rushing_tds) AS rtd,
        SUM(w.targets) AS tgt, SUM(w.receptions) AS rec, SUM(w.receiving_yards) AS recyd,
-       SUM(w.receiving_tds) AS rectd, ANY_VALUE(w.team) AS team,
+       SUM(w.receiving_tds) AS rectd,
+       -- deterministic display team: team of the season's last played week
+       -- (ANY_VALUE permuted per run for midseason movers)
+       ARG_MAX(w.team, w.week) AS team,
        SUM(x.xfp) AS xfp, SUM(x.fpoe) AS fpoe,
        SUM(x2.xfp2) AS xfp2, SUM(x2.fpoe2) AS fpoe2,
        ANY_VALUE(a.afpoe2) AS afpoe2,
@@ -610,14 +592,24 @@ SELECT w.gsis_id, ANY_VALUE(w.name) AS name, ANY_VALUE(w.position) AS position,
        ANY_VALUE(o.cpoe) AS cpoe, ANY_VALUE(o.air) AS air, ANY_VALUE(o.yac) AS yac,
        ANY_VALUE(o.adot) AS adot, ANY_VALUE(o.rztgt) AS rztgt, ANY_VALUE(o.eztgt) AS eztgt,
        ANY_VALUE(o.gl) AS gl, ANY_VALUE(o.rzc) AS rzc,
-       ANY_VALUE(u.tshare) AS tshare, ANY_VALUE(u.ashare) AS ashare, ANY_VALUE(u.wopr) AS wopr
+       ANY_VALUE(u.tshare) AS tshare, ANY_VALUE(u.ashare) AS ashare, ANY_VALUE(u.wopr) AS wopr,
+       SUM(w.completions) AS cmp, SUM(w.attempts) AS att, SUM(w.sacks_suffered) AS sk,
+       SUM(COALESCE(w.rushing_fumbles_lost,0)+COALESCE(w.receiving_fumbles_lost,0)
+           +COALESCE(w.sack_fumbles_lost,0)) AS fuml,
+       SUM(w.fg_made) AS fgm, SUM(w.fg_att) AS fga,
+       SUM(w.pat_made) AS xpm, SUM(w.pat_att) AS xpa
 FROM fact_player_week w
+LEFT JOIN (SELECT DISTINCT gsis_id FROM bridge_player_external
+           WHERE ever_rostered=1 AND gsis_id IS NOT NULL) ros USING (gsis_id)
 LEFT JOIN fact_player_week_xfp x USING (gsis_id, season, week)
 LEFT JOIN fact_player_week_xfp2 x2 USING (gsis_id, season, week)
 LEFT JOIN afpoe a ON a.gsis_id = w.gsis_id AND a.season = w.season
 LEFT JOIN opp_season o ON o.gsis_id = w.gsis_id AND o.season = w.season
 LEFT JOIN usage_season u ON u.gsis_id = w.gsis_id AND u.season = w.season
-WHERE w.position IN ('QB','RB','WR','TE','K') AND w.gsis_id IS NOT NULL
+-- NFL-wide pool stays QB/RB/WR/TE/K; rostered players keep ALL their season
+-- lines regardless of nflverse position label (FB Juszczyk-type cases)
+WHERE (w.position IN ('QB','RB','WR','TE','K') OR ros.gsis_id IS NOT NULL)
+  AND w.gsis_id IS NOT NULL
 GROUP BY w.gsis_id, w.season
 ORDER BY w.gsis_id, w.season
 """).fetchdf()
@@ -643,7 +635,8 @@ season_cols = ["p", "s", "g", "fp", "pyd", "ptd", "pint", "car", "ryd", "rtd",
                "tgt", "rec", "recyd", "rectd", "tm", "xfp", "fpoe",
                "xfp2", "fpoe2", "afpoe2", "db", "recepa", "repa", "pepa", "cpoe",
                "air", "yac", "adot", "rztgt", "eztgt", "gl", "rzc",
-               "tshare", "ashare", "wopr"]
+               "tshare", "ashare", "wopr",
+               "cmp", "att", "sk", "fuml", "fgm", "fga", "xpm", "xpa"]
 season_rows = []
 for r in season_nfl.itertuples():
     season_rows.append([
@@ -655,7 +648,9 @@ for r in season_nfl.itertuples():
         r1(r.recepa), r1(r.repa), r1(r.pepa), as_r2(r.cpoe),
         as_int(r.air), as_int(r.yac), as_r2(r.adot), as_int(r.rztgt), as_int(r.eztgt),
         as_int(r.gl), as_int(r.rzc),
-        as_r2(r.tshare), as_r2(r.ashare), as_r2(r.wopr)])
+        as_r2(r.tshare), as_r2(r.ashare), as_r2(r.wopr),
+        as_int(r.cmp), as_int(r.att), as_int(r.sk), as_int(r.fuml),
+        as_int(r.fgm), as_int(r.fga), as_int(r.xpm), as_int(r.xpa)])
 season_rows.sort(key=lambda x: (x[1], x[0]))
 
 # ---- defense x position boards (display mart) --------------------------------
@@ -665,6 +660,84 @@ SELECT season, defteam, position, g, std_fp_allowed_pg, afp2_allowed_pg,
        xfp2_allowed_pg, ROUND(afp2_allowed_pg / NULLIF(lg_afp2_pg, 0), 3) AS idx
 FROM fact_def_pos_season ORDER BY season, position, defteam""").fetchall():
     def_boards.append([r[0], r[1], r[2], r[3], r2(r[4]), r2(r[5]), r2(r[6]), r[7]])
+
+# ------------------------------------------------------- gamelogs mart -------
+# gamelogs_v1: complete REG-season NFL weekly logs for every AFFL-rostered
+# GSIS player. Custody weeks already live in explore rows (box + advanced);
+# this mart adds (a) their NON-custody NFL weeks with the box score + xfp_v2
+# and (b) a sparse extras sidecar (cmp/att/fumbles-lost/kicking) for custody
+# weeks, which explore rows do not carry. Player key = explore player index.
+gl_df = con.execute("""
+WITH ros AS (SELECT espn_player_id, gsis_id FROM bridge_player_external
+             WHERE ever_rostered=1 AND gsis_id IS NOT NULL),
+cust AS (SELECT DISTINCT gsis_id, season, week FROM bridge_affl_player_week
+         WHERE gsis_id IS NOT NULL)
+SELECT r.espn_player_id AS eid, w.season, w.week, w.team, w.opponent, w.std_fp,
+       x2.xfp2, x2.fpoe2,
+       w.completions AS cmp, w.attempts AS att, w.passing_yards AS pyd,
+       w.passing_tds AS ptd, w.passing_interceptions AS pint, w.sacks_suffered AS sk,
+       w.carries AS car, w.rushing_yards AS ryd, w.rushing_tds AS rtd,
+       w.targets AS tgt, w.receptions AS rec, w.receiving_yards AS recyd,
+       w.receiving_tds AS rectd,
+       COALESCE(w.rushing_fumbles_lost,0)+COALESCE(w.receiving_fumbles_lost,0)
+         +COALESCE(w.sack_fumbles_lost,0) AS fuml,
+       w.fg_made AS fgm, w.fg_att AS fga, w.pat_made AS xpm, w.pat_att AS xpa
+FROM fact_player_week w
+JOIN ros r USING (gsis_id)
+LEFT JOIN cust c ON c.gsis_id=w.gsis_id AND c.season=w.season AND c.week=w.week
+LEFT JOIN fact_player_week_xfp2 x2
+       ON x2.gsis_id=w.gsis_id AND x2.season=w.season AND x2.week=w.week
+WHERE w.season BETWEEN 2014 AND 2025 AND c.gsis_id IS NULL
+ORDER BY w.season, w.week, r.espn_player_id
+""").fetchdf()
+
+gl_cols = ["p", "s", "w", "tm", "opp", "fp", "xfp2", "fpoe2",
+           "cmp", "att", "pyd", "ptd", "int", "sk",
+           "car", "ryd", "rtd", "tgt", "rec", "recyd", "rectd",
+           "fuml", "fgm", "fga", "xpm", "xpa"]
+gl_rows = []
+for r in gl_df.itertuples():
+    gl_rows.append([
+        eid_idx[int(r.eid)], int(r.season), int(r.week),
+        as_str(r.team), as_str(r.opponent), r1(r.std_fp), r1(r.xfp2), r1(r.fpoe2),
+        as_int(r.cmp), as_int(r.att), as_int(r.pyd), as_int(r.ptd), as_int(r.pint),
+        as_int(r.sk), as_int(r.car), as_int(r.ryd), as_int(r.rtd),
+        as_int(r.tgt), as_int(r.rec), as_int(r.recyd), as_int(r.rectd),
+        as_int(r.fuml), as_int(r.fgm), as_int(r.fga), as_int(r.xpm), as_int(r.xpa)])
+
+# sparse extras for custody weeks (only rows where an extra is nonzero)
+gl_cust_df = con.execute("""
+SELECT b.espn_player_id AS eid, b.season, b.week,
+       w.completions AS cmp, w.attempts AS att,
+       COALESCE(w.rushing_fumbles_lost,0)+COALESCE(w.receiving_fumbles_lost,0)
+         +COALESCE(w.sack_fumbles_lost,0) AS fuml,
+       w.fg_made AS fgm, w.fg_att AS fga, w.pat_made AS xpm, w.pat_att AS xpa
+FROM (SELECT DISTINCT espn_player_id, gsis_id, season, week
+      FROM bridge_affl_player_week WHERE gsis_id IS NOT NULL) b
+JOIN fact_player_week w
+  ON w.gsis_id=b.gsis_id AND w.season=b.season AND w.week=b.week
+WHERE COALESCE(w.attempts,0)>0 OR COALESCE(w.completions,0)>0
+   OR COALESCE(w.rushing_fumbles_lost,0)+COALESCE(w.receiving_fumbles_lost,0)
+      +COALESCE(w.sack_fumbles_lost,0)>0
+   OR COALESCE(w.fg_att,0)>0 OR COALESCE(w.pat_att,0)>0
+ORDER BY b.season, b.week, b.espn_player_id
+""").fetchdf()
+gl_cust_cols = ["p", "s", "w", "cmp", "att", "fuml", "fgm", "fga", "xpm", "xpa"]
+gl_cust_rows = []
+for r in gl_cust_df.itertuples():
+    gl_cust_rows.append([
+        eid_idx[int(r.eid)], int(r.season), int(r.week),
+        as_int(r.cmp), as_int(r.att), as_int(r.fuml),
+        as_int(r.fgm), as_int(r.fga), as_int(r.xpm), as_int(r.xpa)])
+
+gamelogs = {
+    "meta": {"version": DATA_VERSION,
+             "scope": "REG 2014-2025; non-custody NFL weeks of AFFL-rostered players"
+                      " + custody-week extras (cmp/att/fumL/kicking)",
+             "rows": len(gl_rows), "custExtraRows": len(gl_cust_rows)},
+    "cols": gl_cols, "rows": gl_rows,
+    "custCols": gl_cust_cols, "custRows": gl_cust_rows,
+}
 
 explore = {
     "meta": {"version": DATA_VERSION, "coverage": "2014-2025",
@@ -691,12 +764,14 @@ def dump(obj, path):
 
 s1 = dump(savant, MARTS / "savant_data.json")
 s2 = dump(explore, MARTS / "explore_data.json")
+s3 = dump(gamelogs, MARTS / "gamelogs_data.json")
 report = {
-    "savant_bytes": s1, "explore_bytes": s2,
+    "savant_bytes": s1, "explore_bytes": s2, "gamelogs_bytes": s3,
     "players": len(players_mart), "stints": len(stints), "drafts": len(drafts),
     "players_draft_only_patched": patched,
     "trades": len(trades), "explore_rows": len(rows), "season_rows": len(season_rows),
     "season_players_appended_nfl": appended, "def_board_rows": len(def_boards),
+    "gamelog_rows": len(gl_rows), "gamelog_cust_extra_rows": len(gl_cust_rows),
     "trade_count_check": len(trades),
     "trade_validation": trade_validation,
 }

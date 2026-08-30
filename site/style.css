@@ -195,3 +195,22 @@ h3.sect.small{font-size:15px}
 .grid.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
 @media(max-width:1000px){.grid.g4{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:560px){.grid.g4{grid-template-columns:1fr}}
+
+/* ---- player profile (players overhaul) ---- */
+.phero{display:flex; gap:24px; align-items:center; flex-wrap:wrap; margin-top:34px;
+  border:1px solid var(--rule); border-radius:16px; padding:24px 26px}
+.hshot{width:148px; height:108px; object-fit:cover; object-position:top; border-radius:14px;
+  border:1px solid var(--rule); background:var(--card2); flex:none}
+@media (max-width:600px){ .hshot{width:104px; height:78px} }
+.rgrid{display:grid; grid-template-columns:repeat(auto-fit,minmax(118px,1fr)); gap:12px 14px; margin-top:10px}
+.rcell .rv{font-family:'Barlow Condensed'; font-weight:700; font-size:23px; line-height:1.05}
+.rcell .rl{font-size:10.5px; color:var(--ink3); text-transform:uppercase; letter-spacing:.06em; margin-top:2px}
+.rk{display:inline-block; margin-top:3px; font:600 10.5px 'IBM Plex Mono'; color:var(--yellow)}
+.rk .dim{color:var(--ink3)}
+.pct-row{display:grid; grid-template-columns:minmax(118px,168px) 1fr 64px 30px; gap:10px; align-items:center; padding:4.5px 0}
+.pct-row .pl{font-size:12px; color:var(--ink2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.pct-row .pbw{height:9px; background:#141a28; border-radius:99px; overflow:hidden}
+.pct-row .pbf{display:block; height:100%; border-radius:99px}
+.pct-row .pv{font:600 12.5px 'IBM Plex Mono'; text-align:right; white-space:nowrap}
+.pct-row .pp{font:700 12.5px 'IBM Plex Mono'; text-align:right}
+.tbl tr.dnp td{color:var(--ink3); background:rgba(255,255,255,.012)}
