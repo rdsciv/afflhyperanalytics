@@ -44,7 +44,7 @@ ax.row_factory = sqlite3.Row
 con = duckdb.connect(str(ROOT / "data" / "nfl.duckdb"))
 
 POS = {1: "QB", 2: "RB", 3: "WR", 4: "TE", 5: "K", 16: "D/ST"}
-DATA_VERSION = "2026.08.30"
+DATA_VERSION = "2026.08.30.2"
 
 
 def r1(x):
@@ -464,27 +464,11 @@ for eid in sorted(draft_eids - known_eids):
 players_mart.sort(key=lambda x: -(x["afflPts"] or 0))
 
 # --------------------------------------------------------- records -----------
-team_weeks = [dict(r) for r in ax.execute(
-    "SELECT season, week, team_id, points FROM fact_team_week")]
-for tw in team_weeks:
-    tw["fid"] = fid_by_st.get((tw["season"], tw["team_id"]))
-tw_sorted = sorted([t for t in team_weeks if t["points"] is not None],
-                   key=lambda x: -x["points"])
-games = [m for m in matchups if not m["bye"] and m["hs"] is not None and m["winner"] not in (None, "UNDECIDED")]
-blowouts = sorted(games, key=lambda m: -abs((m["hs"] or 0) - (m["as_"] or 0)))
-closest = sorted([g for g in blowouts if abs((g["hs"] or 0) - (g["as_"] or 0)) > 0],
-                 key=lambda m: abs((m["hs"] or 0) - (m["as_"] or 0)))
-started = cust[(cust.started == 1) & cust.affl_points.notna()]
-best_pw = started.nlargest(15, "affl_points")
-records = {
-    "teamWeekHigh": tw_sorted[:12],
-    "teamWeekLow": [t for t in reversed(tw_sorted[-12:])],
-    "blowouts": blowouts[:10],
-    "closest": closest[:10],
-    "playerWeeks": [{"s": int(r.season), "w": int(r.week), "fid": r.franchise_id,
-                     "eid": int(r.espn_player_id), "pts": r1(r.affl_points)}
-                    for r in best_pw.itertuples()],
-}
+# Regular-season-only record book (see records_scope.py for the audit rationale:
+# consolation blowouts, two-week playoff totals, and 2022 commissioner
+# adjustments all polluted the unscoped version).
+from records_scope import build_records
+records = build_records(ax, fid_by_st, matchups)
 
 # --------------------------------------------------------- coverage ----------
 coverage = [dict(r) for r in ax.execute(

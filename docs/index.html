@@ -211,7 +211,7 @@ h3.sect.small{font-size:15px}
 <header class="topbar"><div class="wrap topbar-in">
   <a class="wordmark" href="#/">AFFL<b>SAVANT</b></a>
   <nav class="mainnav" id="nav" aria-label="Primary"></nav>
-  <span class="ver">v2026.08.30</span>
+  <span class="ver">v2026.08.30.2</span>
 </div></header>
 <main id="app" aria-live="polite"></main>
 <footer><div class="wrap">
@@ -436,7 +436,7 @@ function home(){
     <h2 class="sect">League eras <span class="sub">scoring and parity by season</span></h2>
     ${chartBox('trendchart', 290)}
     <p class="dim small" style="margin-top:6px">The shaded band spans the best and worst team PPG each season — a narrow band is a tight league; dashed lines are the season's ceiling and floor teams.</p>
-    <h2 class="sect">Record book highlights</h2>
+    <h2 class="sect">Record book highlights <span class="sub">regular season</span></h2>
     <div class="grid g3">
       <div class="card"><div class="kicker">Highest team week</div>
         <div class="stat"><div class="v">${f1(hi.points)}</div></div>
@@ -448,7 +448,7 @@ function home(){
       <div class="card"><div class="kicker">Biggest blowout</div>
         <div class="stat"><div class="v">${f1(Math.abs(bl.hs-bl.as_))}</div></div>
         <div class="small">${esc(blH.name)} ${f1(bl.hs)} — ${f1(bl.as_)} ${esc(blA.name)}</div>
-        <div class="dim small">${bl.season} · MP ${bl.mp} · <a href="#/records">full record book →</a></div></div>
+        <div class="dim small">${bl.season} · Wk ${bl.mp} · <a href="#/records">full record book →</a></div></div>
     </div>
     <h2 class="sect">Ask the archive <span class="sub">saved Explore queries over real custody data</span></h2>
     <div class="presets">${PRESETS.map(p=>`<a class="chip" href="#/explore?q=${encState(Object.assign(defState(),p.state))}">${p.icon} ${p.label}</a>`).join('')}</div>
@@ -530,7 +530,7 @@ function drawTraj(mk){
   const selected = {}; fs.forEach(f=>selected[f.display_name]=!!f.is_active_2026);
   mkChart('trajchart', {
     color: fs.map(f=>fColor(f.franchise_id)),
-    tooltip: ECTT({valueFormatter:v=>v==null?'·':m.fmt(v), order:'valueDesc'}),
+    tooltip: ECTT({valueFormatter:v=>v==null?'·':(m.k==='ap'||m.k==='share'? (+v).toFixed(1)+'%' : m.fmt(v)), order:'valueDesc'}),
     legend: {type:'scroll', top:0, textStyle:{color:'#9fb0c8', fontSize:11}, inactiveColor:'#39445e',
              pageTextStyle:{color:'#9fb0c8'}, pageIconColor:'#8fa2bd', selected},
     grid: {left:54, right:20, top:56, bottom:28},
@@ -837,7 +837,14 @@ function franchisesView(){
     lop? rc('👑','Most lopsided rivalry', `${esc(lopW.w)} owns ${esc(lopW.l)}`, `${lopW.r} · ${pct1(lopW.p)} win rate · min 8 meetings`):'',
     even? rc('⚖','Dead-even series', `${esc(even.an)} vs ${esc(even.bn)}`, `${even.aw}–${even.bw}${even.t?'–'+even.t:''} across ${even.g} meetings`):'',
     most? rc('🔁','Most meetings', `${esc(most.an)} vs ${esc(most.bn)}`, `${most.g} regular-season games since 2014`):'',
-    marg? rc('💪','Widest average margin', `${esc(marg.apf>marg.bpf?marg.an:marg.bn)} by ${f1(Math.abs(marg.apf-marg.bpf)/marg.g)}/game`, `${f1(marg.apf/marg.g)} – ${f1(marg.bpf/marg.g)} average score, ${marg.g} meetings`):'',
+    marg? (function(){
+      const aWins = marg.apf>marg.bpf;
+      const wn = aWins?marg.an:marg.bn, ln = aWins?marg.bn:marg.an;
+      const wavg = Math.max(marg.apf,marg.bpf)/marg.g, lavg = Math.min(marg.apf,marg.bpf)/marg.g;
+      const wrec = aWins? `${marg.aw}–${marg.bw}` : `${marg.bw}–${marg.aw}`;
+      return rc('💪','Widest average margin', `${esc(wn)} over ${esc(ln)}`,
+        `by ${f1(wavg-lavg)}/game · ${f1(wavg)}–${f1(lavg)} avg score · ${wrec}${marg.t?'–'+marg.t:''} in ${marg.g} meetings`);
+    })():'',
     shoot? rc('🎆','Highest-scoring series', `${esc(shoot.an)} vs ${esc(shoot.bn)}`, `${f1((shoot.apf+shoot.bpf)/shoot.g)} combined points per meeting`):'',
     live? rc('🔥','Longest active run', `${esc((F[live.live.fid]||{}).display_name)} · ${live.live.n} straight`, `over ${esc(live.live.fid===live.a?live.bn:live.an)}, and counting`):'',
   ].join('');
@@ -1282,15 +1289,16 @@ function recordsView(qs){
   const pwRow = x=>`<tr><td class="l">${plLink(x.eid)} ${posChip((PL[x.eid]||{}).pos)}</td><td class="l">${frLink(x.fid,x.s)}</td><td>${x.s}</td><td>${x.w}</td><td data-v="${x.pts}">${f1(x.pts)}</td></tr>`;
   const half = (title, head, rows) => `<div><h2 class="sect" style="margin-top:0">${title}</h2>
     <div class="tblwrap"><table class="tbl"><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table></div></div>`;
-  app.innerHTML = `<div class="wrap"><div class="hero"><div class="kicker">The AFFL record book · 2014–${LAST}</div>
-    <h1 class="display">Records</h1></div>
+  app.innerHTML = `<div class="wrap"><div class="hero"><div class="kicker">The AFFL record book · regular season 2014–${LAST}</div>
+    <h1 class="display">Records</h1>
+    <p class="tag">Regular season only, like every other record on this site — playoff and consolation games are excluded (2014–16 playoff "games" were two-week totals, not comparable to a week).</p></div>
     <div class="grid g2">
       ${half('Highest team weeks','<th class="l">Franchise</th><th>Year</th><th>Wk</th><th>Pts</th>', r.teamWeekHigh.map(twRow).join(''))}
       ${half('Lowest team weeks','<th class="l">Franchise</th><th>Year</th><th>Wk</th><th>Pts</th>', r.teamWeekLow.map(twRow).join(''))}
-      ${half('Biggest blowouts','<th class="l">Game</th><th>Year</th><th>MP</th><th>Margin</th>', r.blowouts.map(gmRow).join(''))}
-      ${half('Closest games','<th class="l">Game</th><th>Year</th><th>MP</th><th>Margin</th>', r.closest.map(gmRow).join(''))}
+      ${half('Biggest blowouts','<th class="l">Game</th><th>Year</th><th>Wk</th><th>Margin</th>', r.blowouts.map(gmRow).join(''))}
+      ${half('Closest games','<th class="l">Game</th><th>Year</th><th>Wk</th><th>Margin</th>', r.closest.map(gmRow).join(''))}
     </div>
-    <h2 class="sect">Best started player-weeks</h2>
+    <h2 class="sect">Best started player-weeks <span class="sub">regular season</span></h2>
     <div class="tblwrap"><table class="tbl"><thead><tr><th class="l">Player</th><th class="l">For</th><th>Year</th><th>Wk</th><th>AFFL pts</th></tr></thead>
     <tbody>${r.playerWeeks.map(pwRow).join('')}</tbody></table></div>
 
@@ -1455,7 +1463,7 @@ function luckView(yArg){
       <th class="l sortable">vs median</th><th class="sortable" title="Won despite scoring below the league median">Lucky W</th>
       <th class="sortable" title="Lost despite scoring above the league median">Unlucky L</th>
     </tr></thead><tbody>${ledRows}</tbody></table></div>
-    <p class="dim small" style="margin-top:8px">Sorted by all-play win% — the closest thing to a luck-free ranking of how well each franchise actually scored. <b>Expected W</b> is all-play win% applied to games played; <b>Luck</b> is actual minus expected and sums to zero across the league.</p>
+    <p class="dim small" style="margin-top:8px">Sorted by all-play win% — the closest thing to a luck-free ranking of how well each franchise actually scored. <b>Expected W</b> is all-play win% applied to games played; <b>Luck</b> is actual minus expected and sums to zero across the league. <b>Actual</b> is the official ESPN ledger: the AFFL has never tied — its four equal-score games (2014, 2015, 2016, 2018) were settled by ESPN's tiebreaker, all four to the road team, and count here as the wins and losses they officially were. Winning a game you didn't outscore anyone in is schedule luck at its purest, and it is counted as such.</p>
 
     <div class="grid g2" style="margin-top:26px">
       <div><h2 class="sect" style="margin-top:0">Wins the schedule gave away</h2>
@@ -1476,7 +1484,7 @@ function luckView(yArg){
 
     <h2 class="sect">If you had played their schedule <span class="sub">${year} · exact, not simulated</span></h2>
     <div class="tblwrap mtx"><table class="tbl mono"><thead><tr><th class="l stick">Team</th><th>Real</th>${hdr}<th>Range</th></tr></thead><tbody>${swapRows}</tbody></table></div>
-    <p class="dim small" style="margin-top:8px">Read across: each cell is that team's win total if it had faced the column team's actual opponent sequence, with all scores unchanged. Green means the borrowed schedule was kinder than their own.</p>
+    <p class="dim small" style="margin-top:8px">Read across: each cell is that team's win total if it had faced the column team's actual opponent sequence, with all scores unchanged. Green means the borrowed schedule was kinder than their own. Counterfactual pairings have no ESPN tiebreaker, so an equal-score pairing counts as a tie here — in the four seasons with a real tiebreaker game, the diagonal (your own schedule) is the pure-scoreboard record and can differ from the official <b>Real</b> column by that one game.</p>
 
     <h2 class="sect">Lineup efficiency <span class="sub">2018–${LAST} · optimal lineup from the roster they held</span></h2>
     <div class="grid g2">
@@ -1541,7 +1549,7 @@ function methodsView(){
     <div class="mrow"><span class="k">xfp_v1</span><span>Legacy in-house bucket model (rushes by yardline band, targets by air-yards band × red zone, dropbacks by yardline band), fit in-sample on 2014–2025. <b>Superseded by xfp_v2</b> after a holdout test (below) — kept visible for comparison, not for judgment. Its buckets bake league-average fumble rates into expectation; v2 is silent on fumbles on both sides.</span></div>
     <div class="mrow"><span class="k">adjfac_v1</span><span>Opponent adjustment: defense × position factor on the v2 scope, computed leave-one-week-out (the week being judged is excluded from its own opponent's baseline) and shrunk toward 1 by g/(g+4). Adjusted FPOE = actual − expected × factor. Factors average exactly 1.0 by construction.</span></div>
     <div class="mrow"><span class="k">par_v1</span><span>Replacement PPG per season×position = PPG of the rank-R player (R = starter slots + flex allocation, min 4 weeks rostered). PAR = custody points − replacement × weeks.</span></div>
-    <div class="mrow"><span class="k">allplay_v1</span><span>Every regular-season week, each team's score is ranked against every other team playing that week: all-play W/L/T = teams scored below / above / tied. Expected wins = all-play win% × games played; <b>luck = actual − expected</b> and sums to zero league-wide. Consolation and playoff games excluded.</span></div>
+    <div class="mrow"><span class="k">allplay_v1</span><span>Every regular-season week, each team's score is ranked against every other team playing that week: all-play W/L/T = teams scored below / above / tied. Expected wins = all-play win% × games played; <b>luck = actual − expected</b> and sums to zero league-wide. Consolation and playoff games excluded. <b>Actual results are ESPN's official outcomes:</b> the league's four equal-score games (2014 MP3, 2015 MP11, 2016 MP11, 2018 MP5) were settled by ESPN's tiebreaker — all four to the road team — and count as official wins/losses in records, streaks and ELO. All-play and vs-median remain score-based, so those four performances score as ties there; a tiebreaker win therefore shows up, correctly, as luck.</span></div>
     <div class="mrow"><span class="k">median_v1</span><span>Weekly result against the league median score that week — a schedule-independent win. A <b>lucky win</b> is a win while scoring below the median; an <b>unlucky loss</b> is a loss while scoring above it.</span></div>
     <div class="mrow"><span class="k">lineup_v1</span><span>Optimal = highest-scoring legal lineup from the players actually rostered that week (FLEX takes the best remaining RB/WR/TE; IR excluded as unstartable). Efficiency = started ÷ optimal. <b>2018+ only</b> — pre-2018 ESPN payloads carry no lineup slots, so the counterfactual is unobservable and is withheld, not inferred.</span></div>
     <div class="mrow"><span class="k">schedluck_v1</span><span>Weekly scores held exactly as played; only the opponent pairing is redrawn over ${(L.meta&&L.meta.trials)||2000} random round-robins per season. No projection, no bootstrap of scores — the resulting win spread is pure schedule. The swap matrix is the exact (not simulated) record under every other team's real opponent sequence.</span></div>
@@ -1551,7 +1559,7 @@ function methodsView(){
   </div>
   <h2 class="sect">Evidence coverage by season</h2>
   <div class="tblwrap"><table class="tbl"><thead><tr><th class="l">Season</th><th>Team-weeks</th><th class="l">Lineup evidence</th><th>Bench & slots</th><th>Gap weeks</th><th>Unattributed pts</th></tr></thead><tbody>${covRows}</tbody></table></div>
-  <p class="dim small" style="margin-top:8px">Pre-2018, ESPN's historical matchup rosters omit players later dropped from the roster; their points (3.1% of pre-2018 scoring) remain at team level and are never re-assigned. Exact lineup slots before 2018 are NULL with an explicit “Unavailable” label — we do not infer them. Two-week playoff matchups (2014–2016) retain player points at matchup grain only.</p>
+  <p class="dim small" style="margin-top:8px">Pre-2018, ESPN's historical matchup rosters omit players later dropped from the roster; their points (3.1% of pre-2018 scoring) remain at team level and are never re-assigned. Exact lineup slots before 2018 are NULL with an explicit “Unavailable” label — we do not infer them. Two-week playoff matchups (2014–2016) retain player points at matchup grain only. The record book and all luck/streak/ELO metrics are <b>regular season only</b>; playoff results appear in brackets and playoff W–L. One further evidence note: ESPN's 2022 finals week carries five commissioner scoring adjustments (+12.9 to +26.2) that exist in official matchup totals but not in weekly lineup scores — brackets show the official totals, and the regular-season scope keeps the unadjusted weekly numbers out of every record.</p>
   <h2 class="sect">Validation results <span class="sub">verified by execution against independent paths</span></h2>
   <div class="grid g3">
     <div class="card"><div class="kicker">Lineup ⇄ matchup totals</div><p class="small muted">2018–${LAST}: starter sums equal ESPN team-week scores in <b>${V.modern_ok||1596}/${V.modern_ok||1596}</b> team-weeks (max |Δ| < 0.000001).</p></div>

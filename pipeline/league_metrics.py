@@ -115,6 +115,29 @@ for r in ax.execute("SELECT season, matchup_period AS mp, home_team_id AS h, awa
     else:
         pairs[(r["season"], r["mp"])].append((r["h"], r["a"]))
 
+# Official ESPN outcomes per regular-season pairing (2026-08-30 audit fix).
+# ESPN's tiebreaker settles equal-score games — the AFFL has four (2014 MP3,
+# 2015 MP11, 2016 MP11, 2018 MP5), all officially decided, all to the away
+# side — so the official winner is NOT always derivable from the scores.
+# Actual records, streaks, big-loss/small-win extremes, and ELO follow the
+# official ledger below; the counterfactual layers (all-play, median,
+# schedule sim, swap matrix) stay score-based, because a game that was never
+# actually paired has no tiebreaker.
+official = {}
+for r in ax.execute("SELECT season, matchup_period AS mp, home_team_id AS h,"
+                    " away_team_id AS a, winner FROM fact_matchup"
+                    " WHERE is_playoff = 0 AND is_bye = 0"):
+    official[(r["season"], r["mp"], r["h"], r["a"])] = r["winner"]
+
+
+def official_res(s, mp, h, a, hv, av):
+    """Official result 'HOME'|'AWAY'|'TIE'; score-compare fallback if unset."""
+    w = official.get((s, mp, h, a))
+    if w in ("HOME", "AWAY", "TIE"):
+        return w
+    return "TIE" if hv == av else ("HOME" if hv > av else "AWAY")
+
+
 # team scores by (season, matchup_period). fact_team_week is week-grain; for
 # 2014-16 the playoff matchups span two weeks but regular season is 1:1.
 score = {}                          # (season, mp, tid) -> points
@@ -159,27 +182,29 @@ for (s, mp), plist in sorted(pairs.items()):
             rec["medl"] += 1
         else:
             rec["medt"] += 1
-    # actual H2H results for the same games
+    # actual H2H results for the same games — OFFICIAL outcomes, not score
+    # comparison: ESPN's tiebreaker decides equal-score games.
     for (h, a) in plist:
         hv, av = week_scores.get(h), week_scores.get(a)
         if hv is None or av is None:
             continue
-        for me, opp, mv, ov in ((h, a, hv, av), (a, h, av, hv)):
+        res = official_res(s, mp, h, a, hv, av)
+        for me, opp, mv, ov, side in ((h, a, hv, av, "HOME"), (a, h, av, hv, "AWAY")):
             rec = ts[(s, me)]
             rec["g"] += 1
             rec["pf"] += mv
             rec["pa"] += ov
             rec["oppPf"] += ov
-            if mv > ov:
+            if res == side:
                 rec["w"] += 1
                 if mv < med:
                     rec["luckyW"] += 1
-            elif mv < ov:
+            elif res == "TIE":
+                rec["t"] += 1
+            else:
                 rec["l"] += 1
                 if mv > med:
                     rec["unluckyL"] += 1
-            else:
-                rec["t"] += 1
 
 team_season = []
 for (s, tid), rec in sorted(ts.items()):
@@ -544,12 +569,14 @@ for (s, mp), plist in sorted(pairs.items()):
         hv, av = score.get((s, mp, h)), score.get((s, mp, a))
         if hv is None or av is None:
             continue
-        for me, opp, mv, ov in ((h, a, hv, av), (a, h, av, hv)):
+        pair_res = official_res(s, mp, h, a, hv, av)   # official, incl. tiebreaker
+        for me, opp, mv, ov, side in ((h, a, hv, av, "HOME"), (a, h, av, hv, "AWAY")):
             fid = fid_by_st.get((s, me))
             ofid = fid_by_st.get((s, opp))
-            res = "W" if mv > ov else ("L" if mv < ov else "T")
+            res = "T" if pair_res == "TIE" else ("W" if pair_res == side else "L")
             games_by_fid[fid].append(
-                {"s": s, "w": mp, "res": res, "pts": r1(mv), "opp": r1(ov), "ofid": ofid})
+                {"s": s, "w": mp, "res": res, "pts": r1(mv), "opp": r1(ov),
+                 "ofid": ofid, "_raw": mv})
 
 all_streaks = []                       # every maximal W or L run, all franchises
 streak_by_fid = {}
@@ -590,10 +617,12 @@ streaks = {
                    key=lambda r: (-r["len"], r["s0"], r["w0"]))[:12],
     "byFranchise": streak_by_fid,
     "bigLosses": sorted([g for g in all_games if g["res"] == "L"],
-                        key=lambda g: -g["pts"])[:12],
+                        key=lambda g: (-g["_raw"], g["s"], g["w"], g["fid"]))[:12],
     "smallWins": sorted([g for g in all_games if g["res"] == "W"],
-                        key=lambda g: g["pts"])[:12],
+                        key=lambda g: (g["_raw"], g["s"], g["w"], g["fid"]))[:12],
 }
+for _k in ("bigLosses", "smallWins"):
+    streaks[_k] = [{kk: vv for kk, vv in g.items() if kk != "_raw"} for g in streaks[_k]]
 
 # ------------------------------------------------- ELO rating (rating_v1) ----
 # Classic ELO over regular-season H2H games in chronological order: start 1500,
@@ -615,7 +644,8 @@ for s in sorted(reg_mp):
                 continue
             rh, ra = elo[hf], elo[af]
             eh = 1.0 / (1.0 + 10 ** ((ra - rh) / 400.0))
-            sh = 1.0 if hv > av else (0.0 if hv < av else 0.5)
+            res = official_res(s, mp, h, a, hv, av)    # official, incl. tiebreaker
+            sh = 1.0 if res == "HOME" else (0.0 if res == "AWAY" else 0.5)
             elo[hf] = rh + ELO_K * (sh - eh)
             elo[af] = ra + ELO_K * ((1.0 - sh) - (1.0 - eh))
             played.add(hf)
@@ -625,9 +655,12 @@ for s in sorted(reg_mp):
 
 out = {
     "meta": {
-        "version": "luck_v1", "trials": N_TRIALS, "seed": SEED,
+        "version": "luck_v1.1", "trials": N_TRIALS, "seed": SEED,
         "lineupCoverage": "2018-2025 (pre-2018 lineup slots unavailable)",
         "scope": "regular season only; consolation and playoff games excluded",
+        "results": "official ESPN outcomes (four equal-score games settled by"
+                   " ESPN's tiebreaker count as W/L, not ties); counterfactual"
+                   " layers (all-play, median, sim, swap) remain score-based",
         "extensions": "rankheat_v1 (weekly score rank), streaks_v1 "
                       "(cross-season regular-season H2H runs), rating_v1 "
                       "(ELO K=24 base 1500, W/L only, season-end snapshots)",
