@@ -129,16 +129,22 @@ shell += """<div id="bootmsg">loading the record… <span id="bootpct"></span></
 <script>window.VALID=__VALID__;</script>
 <script>
 (function(){
-  var files = ['data/savant.json','data/explore_a.json','data/explore_b.json','data/explore_c.json','data/luck.json','data/logos.json'];
+  // ?v= pins every data file to this shell's dataset version: a cached copy of
+  // one generation can never mix with fresh copies of another (split-file skew).
+  var V = '__DATAVER__';
+  var files = ['data/savant.json','data/explore_a.json','data/explore_b.json','data/explore_c.json','data/luck.json','data/logos.json']
+    .map(function(f){ return f+'?v='+V; });
   var done = 0, pct = document.getElementById('bootpct');
   function got(r){ if(!r.ok) throw new Error(r.url+' -> '+r.status); done++; if(pct) pct.textContent = done+'/'+files.length; return r.json(); }
   Promise.all(files.map(function(f){ return fetch(f).then(got); })).then(function(d){
     window.SAVANT = d[0];
     var ex = d[1]; ex.rows = ex.rows.concat(d[2].rows, d[3].rows);
+    if(ex.meta && ex.meta.custodyRows && ex.rows.length !== ex.meta.custodyRows)
+      throw new Error('data generation skew ('+ex.rows.length+' rows, expected '+ex.meta.custodyRows+') — hard-refresh (Ctrl/Cmd+Shift+R)');
     window.EXPLORE = ex;
     window.LUCK = d[4];
     window.LOGOS = d[5];
-    window.GAMELOGS_URLS = ['data/gamelogs.json'];  // lazy: fetched on first player page
+    window.GAMELOGS_URLS = ['data/gamelogs.json?v='+V];  // lazy: fetched on first player page
     document.getElementById('bootmsg').remove();
     __boot();
   }).catch(function(e){
@@ -152,6 +158,7 @@ __JS__
 </body>
 </html>"""
 shell = shell.replace("__VALID__", json.dumps(valid)).replace("__JS__", js)
+shell = shell.replace("__DATAVER__", meta["version"])
 (docs / "index.html").write_text(shell)
 print("wrote %s  (Pages shell, %.2f MB) + data/ splits: %s"
       % (docs / "index.html", (docs / "index.html").stat().st_size / 1e6,

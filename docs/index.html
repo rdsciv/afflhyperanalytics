@@ -242,16 +242,22 @@ h3.sect.small{font-size:15px}
 <script>window.VALID={"modern_ok": 1596, "fp_recon_n": 60905, "fp_recon_pct": 99.55, "fp_recon_mad": 0.019, "starter_weeks": 18345, "starter_match_pct": 99.19, "pbp_plays": 399191, "bridge": {"rostered": 918, "gsis": 886, "dst": 32, "quarantined": 0}, "trades": {"events": 224, "items_direct": 46, "items_inferred": 150, "unresolved": 28, "custody_confirmed": 194}, "xfp2": {"recon": {"n": 60892, "mean_abs_diff": 0.007, "pct_within_1": 99.8, "worst": 11.2}, "holdout": [{"pos": "ALL", "n": 2684, "xfp2_pred_r": 0.8163, "actual2_pred_r": 0.8084, "xfp1_pred_r": 0.8027, "actual1_pred_r": 0.803}, {"pos": "QB", "n": 307, "xfp2_pred_r": 0.4482, "actual2_pred_r": 0.4791, "xfp1_pred_r": 0.334, "actual1_pred_r": 0.4832}, {"pos": "RB", "n": 718, "xfp2_pred_r": 0.6637, "actual2_pred_r": 0.6937, "xfp1_pred_r": 0.6607, "actual1_pred_r": 0.6917}, {"pos": "TE", "n": 533, "xfp2_pred_r": 0.654, "actual2_pred_r": 0.6023, "xfp1_pred_r": 0.651, "actual1_pred_r": 0.5976}, {"pos": "WR", "n": 1126, "xfp2_pred_r": 0.664, "actual2_pred_r": 0.6524, "xfp1_pred_r": 0.647, "actual1_pred_r": 0.6509}], "worst_bias_pct": 7.22}};</script>
 <script>
 (function(){
-  var files = ['data/savant.json','data/explore_a.json','data/explore_b.json','data/explore_c.json','data/luck.json','data/logos.json'];
+  // ?v= pins every data file to this shell's dataset version: a cached copy of
+  // one generation can never mix with fresh copies of another (split-file skew).
+  var V = '2026.08.30.3';
+  var files = ['data/savant.json','data/explore_a.json','data/explore_b.json','data/explore_c.json','data/luck.json','data/logos.json']
+    .map(function(f){ return f+'?v='+V; });
   var done = 0, pct = document.getElementById('bootpct');
   function got(r){ if(!r.ok) throw new Error(r.url+' -> '+r.status); done++; if(pct) pct.textContent = done+'/'+files.length; return r.json(); }
   Promise.all(files.map(function(f){ return fetch(f).then(got); })).then(function(d){
     window.SAVANT = d[0];
     var ex = d[1]; ex.rows = ex.rows.concat(d[2].rows, d[3].rows);
+    if(ex.meta && ex.meta.custodyRows && ex.rows.length !== ex.meta.custodyRows)
+      throw new Error('data generation skew ('+ex.rows.length+' rows, expected '+ex.meta.custodyRows+') — hard-refresh (Ctrl/Cmd+Shift+R)');
     window.EXPLORE = ex;
     window.LUCK = d[4];
     window.LOGOS = d[5];
-    window.GAMELOGS_URLS = ['data/gamelogs.json'];  // lazy: fetched on first player page
+    window.GAMELOGS_URLS = ['data/gamelogs.json?v='+V];  // lazy: fetched on first player page
     document.getElementById('bootmsg').remove();
     __boot();
   }).catch(function(e){
