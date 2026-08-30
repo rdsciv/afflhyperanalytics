@@ -113,7 +113,7 @@ function render(){
     else if(r==='p') playerView(+seg[1]);
     else if(r==='seasons') seasonsView();
     else if(r==='s') seasonView(+seg[1]);
-    else if(r==='drafts') draftsView(seg[1]?+seg[1]:null);
+    else if(r==='drafts') draftsView(seg[1]==='all'?'all':(seg[1]?+seg[1]:null));
     else if(r==='trades') tradesView();
     else if(r==='luck') luckView(seg[1]?+seg[1]:null);
     else if(r==='records') recordsView(qs);
@@ -466,20 +466,21 @@ function drawSeasonRace(y){
 
 /* -- draft: price vs PAR scatter + spend mix -- */
 const POS_COLOR = {QB:'#ff4d5e', RB:'#37d67a', WR:'#00a2ff', TE:'#ffc400', K:'#8fa2bd', 'D/ST':'#b078ff'};
-function drawDraftScatter(y){
-  const picks = S.drafts.filter(d=>d.s===y && d.bid>0 && d.par!=null);
+function drawDraftScatter(scope){
+  const allSeasons = scope==='all';
+  const picks = S.drafts.filter(d=>(allSeasons || d.s===scope) && S.seasons[d.s] && S.seasons[d.s].auction && d.bid>0 && d.par!=null);
   if(!picks.length) return;
   const byPos = {};
   picks.forEach(d=>{ const p=(PL[d.eid]||{}).pos||'?'; (byPos[p]=byPos[p]||[]).push(d); });
   mkChart('draftscatter', {
     tooltip: ECTT({trigger:'item', formatter:p=>{ const d=p.data[2];
-      return `<b>${esc((PL[d.eid]||{}).name||d.eid)}</b> · ${esc((PL[d.eid]||{}).pos||'')}<br>$${d.bid} → ${signed(d.par,f1)} PAR<br><span style="color:#8fa2bd">${esc((F[d.fid]||{}).display_name||'')}${d.keeper?' · keeper':''}</span>`; }}),
+      return `<b>${esc((PL[d.eid]||{}).name||d.eid)}</b> · ${esc((PL[d.eid]||{}).pos||'')}<br>${allSeasons?d.s+' · ':''}$${d.bid} → ${signed(d.par,f1)} PAR<br><span style="color:#8fa2bd">${esc(histName(d.s,d.fid)||'')}${d.keeper?' · keeper':''}</span>`; }}),
     legend: {top:0, textStyle:{color:'#9fb0c8', fontSize:11}},
     grid: {left:54, right:20, top:34, bottom:40},
     xAxis: Object.assign(ECY({name:'auction price $', nameLocation:'middle', nameGap:26, nameTextStyle:{color:'#8fa2bd'}}), {scale:false}),
     yAxis: ECY({name:'draft PAR', nameTextStyle:{color:'#8fa2bd'}}),
-    series: Object.entries(byPos).map(([pos, ds])=>({name:pos, type:'scatter', symbolSize:7.5,
-      itemStyle:{color:POS_COLOR[pos]||'#8fa2bd', opacity:.85},
+    series: Object.entries(byPos).map(([pos, ds])=>({name:pos, type:'scatter', symbolSize:allSeasons?5.5:7.5,
+      itemStyle:{color:POS_COLOR[pos]||'#8fa2bd', opacity:.82},
       data: ds.map(d=>[d.bid, d.par, d]) })),
   });
 }
@@ -949,22 +950,30 @@ function seasonView(y){
 }
 
 /* ---------------- DRAFTS ---------------- */
-function draftsView(year){
+function draftsView(scope){
   const auctionYears = DONE.filter(y=>S.seasons[y].auction);
-  const y = year && DONE.includes(year) ? year : auctionYears[auctionYears.length-1];
-  const isAuction = S.seasons[y].auction;
-  const picks = S.drafts.filter(d=>d.s===y).sort((a,b)=> isAuction ? b.bid-a.bid : a.pick-b.pick);
+  const allSeasons = scope==='all';
+  const y = !allSeasons && scope && DONE.includes(scope) ? scope : auctionYears[auctionYears.length-1];
+  const isAuction = !allSeasons && S.seasons[y].auction;
+  const showScatter = allSeasons || isAuction;
+  const picks = S.drafts.filter(d=>allSeasons ? DONE.includes(d.s) : d.s===y).sort((a,b)=>{
+    if(allSeasons && a.s!==b.s) return b.s-a.s;
+    const auction = S.seasons[a.s] && S.seasons[a.s].auction;
+    return auction ? b.bid-a.bid : a.pick-b.pick;
+  });
   const rows = picks.map(d=>{
-    const perDollar = isAuction && d.bid>0 && d.par!=null ? d.par/d.bid : null;
-    return `<tr><td>${isAuction?'$'+d.bid:('#'+d.pick)}</td>
+    const rowAuction = S.seasons[d.s] && S.seasons[d.s].auction;
+    const perDollar = rowAuction && d.bid>0 && d.par!=null ? d.par/d.bid : null;
+    return `<tr>${allSeasons?`<td data-v="${d.s}">${d.s}</td>`:''}<td>${rowAuction?'$'+d.bid:('#'+d.pick)}</td>
     <td class="l">${plLink(d.eid)} ${posChip((PL[d.eid]||{}).pos)}</td>
-    <td class="l">${frLink(d.fid, y)}</td>
+    <td class="l">${frLink(d.fid, d.s)}</td>
     <td class="l">${d.keeper?'<span class="badge blue">keeper</span>':''}</td>
     <td data-v="${d.weeks}">${d.weeks}</td><td data-v="${d.starts}">${d.starts}</td>
     <td data-v="${d.pts}">${f1(d.pts)}</td>
     <td class="${cls(d.par)}" data-v="${d.par==null?-999:d.par}">${signed(d.par,f1)}</td>
     <td class="${cls(perDollar)}" data-v="${perDollar==null?-999:perDollar}">${perDollar==null?'·':f2(perDollar)}</td></tr>`;}).join('');
-  const tabs = DONE.map(yy=>`<a class="chip ${yy===y?'on':''}" href="#/drafts/${yy}">${yy}${S.seasons[yy].auction?'':' ⛓'}</a>`).join('');
+  const tabs = `<a class="chip ${allSeasons?'on':''}" href="#/drafts/all">All Seasons</a>`+
+    DONE.map(yy=>`<a class="chip ${!allSeasons&&yy===y?'on':''}" href="#/drafts/${yy}">${yy}${S.seasons[yy].auction?'':' ⛓'}</a>`).join('');
   const allAuction = S.drafts.filter(d=>S.seasons[d.s] && S.seasons[d.s].auction && d.bid>0 && d.par!=null);
   const bestVal = [...allAuction].filter(d=>d.bid>=2).sort((a,b)=>b.par/b.bid-a.par/a.bid).slice(0,10);
   const busts = [...allAuction].filter(d=>d.bid>=30).sort((a,b)=>a.par-b.par).slice(0,10);
@@ -973,11 +982,12 @@ function draftsView(year){
     <div class="hero"><div class="kicker">$200 auctions since 2016 · 2014–2015 were snake drafts (excluded from price analysis)</div>
     <h1 class="display">Draft Room</h1></div>
     <div class="pill-scroll" style="margin-bottom:14px">${tabs}</div>
-    ${isAuction?'':'<div class="notice" style="margin-bottom:14px">'+y+' was a snake draft — bid amounts do not exist; value analysis uses auction seasons only (canon).</div>'}
-    ${isAuction?`<h2 class="sect" style="margin-top:0">Price vs. payoff <span class="sub">${y} · every dollar against the PAR it bought</span></h2>
+    ${allSeasons?`<div class="notice" style="margin-bottom:14px">All ${picks.length} historical picks are listed below. Auction charts and PAR/$ use 2016–${auctionYears[auctionYears.length-1]} only; 2014–2015 remain visible as snake-draft picks with no invented prices.</div>`:
+      (isAuction?'':`<div class="notice" style="margin-bottom:14px">${y} was a snake draft — bid amounts do not exist; value analysis uses auction seasons only (canon).</div>`)}
+    ${showScatter?`<h2 class="sect" style="margin-top:0">Price vs. payoff <span class="sub">${allSeasons?`${auctionYears[0]}–${auctionYears[auctionYears.length-1]} · all auction seasons combined`:`${y} · every dollar against the PAR it bought`}</span></h2>
     ${chartBox('draftscatter', 380)}
     <p class="dim small" style="margin:6px 0 18px">Up and left is a steal; down and right is a bust. Hover any dot. Draft PAR is par_v1 — points delivered to the drafting franchise above a replacement start.</p>`:''}
-    <div class="tblwrap"><table class="tbl"><thead><tr><th>${isAuction?'Price':'Pick'}</th><th class="l">Player</th><th class="l">Franchise</th><th class="l"></th>
+    <div class="tblwrap"><table class="tbl"><thead><tr>${allSeasons?'<th class="sortable">Season</th>':''}<th>${allSeasons?'Price / Pick':(isAuction?'Price':'Pick')}</th><th class="l">Player</th><th class="l">Franchise</th><th class="l"></th>
       <th class="sortable">Wks</th><th class="sortable">Starts</th><th class="sortable">Pts for them</th><th class="sortable">Draft PAR</th><th class="sortable">PAR/$</th></tr></thead><tbody>${rows}</tbody></table></div>
     <div class="grid g2" style="margin-top:26px">
       <div class="card"><div class="kicker">Best auction values, all-time (min $2)</div>${bestVal.map(mini).join('')}</div>
@@ -988,7 +998,7 @@ function draftsView(year){
     <p class="dim small" style="margin-top:14px">Draft PAR (par_v1): AFFL points delivered to the drafting franchise while rostered, minus replacement-level points for the position over those weeks. Replacement baselines per season are listed in <a href="#/methods">Methodology</a>.</p>
   </div>`;
   sortableTable(app);
-  if(isAuction) drawDraftScatter(y);
+  if(showScatter) drawDraftScatter(allSeasons?'all':y);
   drawSpendMix();
 }
 
