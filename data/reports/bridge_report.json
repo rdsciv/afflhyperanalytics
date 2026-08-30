@@ -1,0 +1,174 @@
+{
+  "bridge_total": 982,
+  "rostered_identities": 918,
+  "rostered_dst": 32,
+  "rostered_matched_gsis": 886,
+  "rostered_quarantined": 0,
+  "by_method": {
+    "dst": 32,
+    "espn_id": 949,
+    "unmatched": 1
+  },
+  "custody_rows": 31250,
+  "coverage_by_season": [
+    {
+      "season": 2014,
+      "roster_weeks": 1508,
+      "identified": 1508.0,
+      "starter_weeks": 1508.0,
+      "starter_identified": 1508.0
+    },
+    {
+      "season": 2015,
+      "roster_weeks": 1490,
+      "identified": 1490.0,
+      "starter_weeks": 1490.0,
+      "starter_identified": 1490.0
+    },
+    {
+      "season": 2016,
+      "roster_weeks": 1512,
+      "identified": 1512.0,
+      "starter_weeks": 1512.0,
+      "starter_identified": 1512.0
+    },
+    {
+      "season": 2017,
+      "roster_weeks": 1726,
+      "identified": 1726.0,
+      "starter_weeks": 1726.0,
+      "starter_identified": 1726.0
+    },
+    {
+      "season": 2018,
+      "roster_weeks": 2880,
+      "identified": 2880.0,
+      "starter_weeks": 1728.0,
+      "starter_identified": 1728.0
+    },
+    {
+      "season": 2019,
+      "roster_weeks": 2879,
+      "identified": 2879.0,
+      "starter_weeks": 1726.0,
+      "starter_identified": 1726.0
+    },
+    {
+      "season": 2020,
+      "roster_weeks": 2879,
+      "identified": 2879.0,
+      "starter_weeks": 1723.0,
+      "starter_identified": 1723.0
+    },
+    {
+      "season": 2021,
+      "roster_weeks": 3186,
+      "identified": 3186.0,
+      "starter_weeks": 1834.0,
+      "starter_identified": 1834.0
+    },
+    {
+      "season": 2022,
+      "roster_weeks": 3181,
+      "identified": 3181.0,
+      "starter_weeks": 1836.0,
+      "starter_identified": 1836.0
+    },
+    {
+      "season": 2023,
+      "roster_weeks": 3182,
+      "identified": 3182.0,
+      "starter_weeks": 1835.0,
+      "starter_identified": 1835.0
+    },
+    {
+      "season": 2024,
+      "roster_weeks": 3411,
+      "identified": 3411.0,
+      "starter_weeks": 1836.0,
+      "starter_identified": 1836.0
+    },
+    {
+      "season": 2025,
+      "roster_weeks": 3416,
+      "identified": 3416.0,
+      "starter_weeks": 1836.0,
+      "starter_identified": 1836.0
+    }
+  ],
+  "starter_nfl_match_by_season": [
+    {
+      "season": 2014,
+      "starter_weeks_nondst": 1363,
+      "with_nfl_week": 1337.0,
+      "unmatched_nonzero": 0.0
+    },
+    {
+      "season": 2015,
+      "starter_weeks_nondst": 1333,
+      "with_nfl_week": 1318.0,
+      "unmatched_nonzero": 0.0
+    },
+    {
+      "season": 2016,
+      "starter_weeks_nondst": 1352,
+      "with_nfl_week": 1332.0,
+      "unmatched_nonzero": 0.0
+    },
+    {
+      "season": 2017,
+      "starter_weeks_nondst": 1534,
+      "with_nfl_week": 1523.0,
+      "unmatched_nonzero": 0.0
+    },
+    {
+      "season": 2018,
+      "starter_weeks_nondst": 1536,
+      "with_nfl_week": 1526.0,
+      "unmatched_nonzero": 0.0
+    },
+    {
+      "season": 2019,
+      "starter_weeks_nondst": 1535,
+      "with_nfl_week": 1520.0,
+      "unmatched_nonzero": 0.0
+    },
+    {
+      "season": 2020,
+      "starter_weeks_nondst": 1534,
+      "with_nfl_week": 1523.0,
+      "unmatched_nonzero": 0.0
+    },
+    {
+      "season": 2021,
+      "starter_weeks_nondst": 1631,
+      "with_nfl_week": 1624.0,
+      "unmatched_nonzero": 0.0
+    },
+    {
+      "season": 2022,
+      "starter_weeks_nondst": 1632,
+      "with_nfl_week": 1616.0,
+      "unmatched_nonzero": 0.0
+    },
+    {
+      "season": 2023,
+      "starter_weeks_nondst": 1631,
+      "with_nfl_week": 1625.0,
+      "unmatched_nonzero": 0.0
+    },
+    {
+      "season": 2024,
+      "starter_weeks_nondst": 1632,
+      "with_nfl_week": 1626.0,
+      "unmatched_nonzero": 0.0
+    },
+    {
+      "season": 2025,
+      "starter_weeks_nondst": 1632,
+      "with_nfl_week": 1627.0,
+      "unmatched_nonzero": 0.0
+    }
+  ],
+  "quarantined_rostered": []
+}

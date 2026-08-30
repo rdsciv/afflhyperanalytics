@@ -1,0 +1,15 @@
+{
+  "counts": {
+    "dim_nfl_player": 25066,
+    "fact_player_week": 208171,
+    "fact_player_week_opp": 62594,
+    "fact_player_week_xfp": 62594,
+    "stg_pbp": 399191
+  },
+  "fp_reconciliation_pbp_vs_official": {
+    "n": 60905,
+    "mean_abs_diff": 0.019,
+    "pct_within_1": 99.55,
+    "worst": 12.0
+  }
+}

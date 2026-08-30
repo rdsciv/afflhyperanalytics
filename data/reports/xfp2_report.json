@@ -1,0 +1,481 @@
+{
+  "counts": {
+    "fact_player_week_xfp2": 62574,
+    "fact_def_pos_week": 31461,
+    "fact_def_pos_season": 1536
+  },
+  "grain_duplicates": 0,
+  "join_coverage_by_season": [
+    {
+      "season": 2014,
+      "official_pw": 5412,
+      "matched": 4912,
+      "pct": 90.76,
+      "unmatched_gt3fp": 8
+    },
+    {
+      "season": 2015,
+      "official_pw": 5423,
+      "matched": 4914,
+      "pct": 90.61,
+      "unmatched_gt3fp": 4
+    },
+    {
+      "season": 2016,
+      "official_pw": 5413,
+      "matched": 4907,
+      "pct": 90.65,
+      "unmatched_gt3fp": 2
+    },
+    {
+      "season": 2017,
+      "official_pw": 5448,
+      "matched": 4927,
+      "pct": 90.44,
+      "unmatched_gt3fp": 5
+    },
+    {
+      "season": 2018,
+      "official_pw": 5363,
+      "matched": 4892,
+      "pct": 91.22,
+      "unmatched_gt3fp": 4
+    },
+    {
+      "season": 2019,
+      "official_pw": 5411,
+      "matched": 4895,
+      "pct": 90.46,
+      "unmatched_gt3fp": 4
+    },
+    {
+      "season": 2020,
+      "official_pw": 5543,
+      "matched": 5053,
+      "pct": 91.16,
+      "unmatched_gt3fp": 3
+    },
+    {
+      "season": 2021,
+      "official_pw": 5866,
+      "matched": 5303,
+      "pct": 90.4,
+      "unmatched_gt3fp": 4
+    },
+    {
+      "season": 2022,
+      "official_pw": 5808,
+      "matched": 5272,
+      "pct": 90.77,
+      "unmatched_gt3fp": 2
+    },
+    {
+      "season": 2023,
+      "official_pw": 5801,
+      "matched": 5295,
+      "pct": 91.28,
+      "unmatched_gt3fp": 5
+    },
+    {
+      "season": 2024,
+      "official_pw": 5864,
+      "matched": 5239,
+      "pct": 89.34,
+      "unmatched_gt3fp": 7
+    },
+    {
+      "season": 2025,
+      "official_pw": 6037,
+      "matched": 5283,
+      "pct": 87.51,
+      "unmatched_gt3fp": 4
+    }
+  ],
+  "actual_reconciliation_ffverse_vs_official": {
+    "n": 60892,
+    "mean_abs_diff": 0.007,
+    "pct_within_1": 99.8,
+    "worst": 11.2
+  },
+  "calibration_worst_abs_bias_pct": 7.22,
+  "calibration_by_pos_season": [
+    {
+      "pos": "QB",
+      "season": 2014,
+      "xfp2": 8633.0,
+      "afp2": 8437.0,
+      "bias_pct": -2.27
+    },
+    {
+      "pos": "QB",
+      "season": 2015,
+      "xfp2": 8716.0,
+      "afp2": 8897.0,
+      "bias_pct": 2.07
+    },
+    {
+      "pos": "QB",
+      "season": 2016,
+      "xfp2": 8850.0,
+      "afp2": 8601.0,
+      "bias_pct": -2.82
+    },
+    {
+      "pos": "QB",
+      "season": 2017,
+      "xfp2": 8266.0,
+      "afp2": 8154.0,
+      "bias_pct": -1.35
+    },
+    {
+      "pos": "QB",
+      "season": 2018,
+      "xfp2": 9297.0,
+      "afp2": 8997.0,
+      "bias_pct": -3.22
+    },
+    {
+      "pos": "QB",
+      "season": 2019,
+      "xfp2": 9125.0,
+      "afp2": 8815.0,
+      "bias_pct": -3.4
+    },
+    {
+      "pos": "QB",
+      "season": 2020,
+      "xfp2": 9952.0,
+      "afp2": 9541.0,
+      "bias_pct": -4.12
+    },
+    {
+      "pos": "QB",
+      "season": 2021,
+      "xfp2": 10024.0,
+      "afp2": 9300.0,
+      "bias_pct": -7.22
+    },
+    {
+      "pos": "QB",
+      "season": 2022,
+      "xfp2": 9427.0,
+      "afp2": 8920.0,
+      "bias_pct": -5.38
+    },
+    {
+      "pos": "QB",
+      "season": 2023,
+      "xfp2": 9251.0,
+      "afp2": 8955.0,
+      "bias_pct": -3.2
+    },
+    {
+      "pos": "QB",
+      "season": 2024,
+      "xfp2": 9443.0,
+      "afp2": 9352.0,
+      "bias_pct": -0.96
+    },
+    {
+      "pos": "QB",
+      "season": 2025,
+      "xfp2": 9332.0,
+      "afp2": 9058.0,
+      "bias_pct": -2.93
+    },
+    {
+      "pos": "RB",
+      "season": 2014,
+      "xfp2": 9153.0,
+      "afp2": 9167.0,
+      "bias_pct": 0.15
+    },
+    {
+      "pos": "RB",
+      "season": 2015,
+      "xfp2": 9042.0,
+      "afp2": 9045.0,
+      "bias_pct": 0.03
+    },
+    {
+      "pos": "RB",
+      "season": 2016,
+      "xfp2": 9154.0,
+      "afp2": 9344.0,
+      "bias_pct": 2.08
+    },
+    {
+      "pos": "RB",
+      "season": 2017,
+      "xfp2": 9168.0,
+      "afp2": 9235.0,
+      "bias_pct": 0.73
+    },
+    {
+      "pos": "RB",
+      "season": 2018,
+      "xfp2": 9458.0,
+      "afp2": 9712.0,
+      "bias_pct": 2.69
+    },
+    {
+      "pos": "RB",
+      "season": 2019,
+      "xfp2": 9457.0,
+      "afp2": 9541.0,
+      "bias_pct": 0.89
+    },
+    {
+      "pos": "RB",
+      "season": 2020,
+      "xfp2": 9742.0,
+      "afp2": 9595.0,
+      "bias_pct": -1.51
+    },
+    {
+      "pos": "RB",
+      "season": 2021,
+      "xfp2": 9952.0,
+      "afp2": 9919.0,
+      "bias_pct": -0.33
+    },
+    {
+      "pos": "RB",
+      "season": 2022,
+      "xfp2": 9661.0,
+      "afp2": 9681.0,
+      "bias_pct": 0.21
+    },
+    {
+      "pos": "RB",
+      "season": 2023,
+      "xfp2": 9516.0,
+      "afp2": 9220.0,
+      "bias_pct": -3.1
+    },
+    {
+      "pos": "RB",
+      "season": 2024,
+      "xfp2": 9600.0,
+      "afp2": 9690.0,
+      "bias_pct": 0.94
+    },
+    {
+      "pos": "RB",
+      "season": 2025,
+      "xfp2": 9631.0,
+      "afp2": 9755.0,
+      "bias_pct": 1.29
+    },
+    {
+      "pos": "TE",
+      "season": 2014,
+      "xfp2": 3956.0,
+      "afp2": 4019.0,
+      "bias_pct": 1.59
+    },
+    {
+      "pos": "TE",
+      "season": 2015,
+      "xfp2": 4140.0,
+      "afp2": 4210.0,
+      "bias_pct": 1.7
+    },
+    {
+      "pos": "TE",
+      "season": 2016,
+      "xfp2": 4048.0,
+      "afp2": 3993.0,
+      "bias_pct": -1.36
+    },
+    {
+      "pos": "TE",
+      "season": 2017,
+      "xfp2": 3821.0,
+      "afp2": 3790.0,
+      "bias_pct": -0.82
+    },
+    {
+      "pos": "TE",
+      "season": 2018,
+      "xfp2": 3842.0,
+      "afp2": 3867.0,
+      "bias_pct": 0.63
+    },
+    {
+      "pos": "TE",
+      "season": 2019,
+      "xfp2": 3967.0,
+      "afp2": 3965.0,
+      "bias_pct": -0.05
+    },
+    {
+      "pos": "TE",
+      "season": 2020,
+      "xfp2": 4394.0,
+      "afp2": 4256.0,
+      "bias_pct": -3.16
+    },
+    {
+      "pos": "TE",
+      "season": 2021,
+      "xfp2": 4295.0,
+      "afp2": 4177.0,
+      "bias_pct": -2.75
+    },
+    {
+      "pos": "TE",
+      "season": 2022,
+      "xfp2": 3909.0,
+      "afp2": 4001.0,
+      "bias_pct": 2.36
+    },
+    {
+      "pos": "TE",
+      "season": 2023,
+      "xfp2": 3740.0,
+      "afp2": 3852.0,
+      "bias_pct": 3.01
+    },
+    {
+      "pos": "TE",
+      "season": 2024,
+      "xfp2": 3820.0,
+      "afp2": 3926.0,
+      "bias_pct": 2.77
+    },
+    {
+      "pos": "TE",
+      "season": 2025,
+      "xfp2": 4127.0,
+      "afp2": 4377.0,
+      "bias_pct": 6.06
+    },
+    {
+      "pos": "WR",
+      "season": 2014,
+      "xfp2": 11421.0,
+      "afp2": 11325.0,
+      "bias_pct": -0.84
+    },
+    {
+      "pos": "WR",
+      "season": 2015,
+      "xfp2": 11358.0,
+      "afp2": 11563.0,
+      "bias_pct": 1.81
+    },
+    {
+      "pos": "WR",
+      "season": 2016,
+      "xfp2": 11707.0,
+      "afp2": 11569.0,
+      "bias_pct": -1.17
+    },
+    {
+      "pos": "WR",
+      "season": 2017,
+      "xfp2": 10488.0,
+      "afp2": 10284.0,
+      "bias_pct": -1.95
+    },
+    {
+      "pos": "WR",
+      "season": 2018,
+      "xfp2": 11657.0,
+      "afp2": 11713.0,
+      "bias_pct": 0.48
+    },
+    {
+      "pos": "WR",
+      "season": 2019,
+      "xfp2": 11213.0,
+      "afp2": 11305.0,
+      "bias_pct": 0.82
+    },
+    {
+      "pos": "WR",
+      "season": 2020,
+      "xfp2": 11981.0,
+      "afp2": 12090.0,
+      "bias_pct": 0.91
+    },
+    {
+      "pos": "WR",
+      "season": 2021,
+      "xfp2": 12302.0,
+      "afp2": 12035.0,
+      "bias_pct": -2.18
+    },
+    {
+      "pos": "WR",
+      "season": 2022,
+      "xfp2": 11411.0,
+      "afp2": 11390.0,
+      "bias_pct": -0.18
+    },
+    {
+      "pos": "WR",
+      "season": 2023,
+      "xfp2": 11454.0,
+      "afp2": 11685.0,
+      "bias_pct": 2.01
+    },
+    {
+      "pos": "WR",
+      "season": 2024,
+      "xfp2": 11526.0,
+      "afp2": 11727.0,
+      "bias_pct": 1.74
+    },
+    {
+      "pos": "WR",
+      "season": 2025,
+      "xfp2": 10965.0,
+      "afp2": 10720.0,
+      "bias_pct": -2.24
+    }
+  ],
+  "holdout_h1_to_h2": [
+    {
+      "pos": "ALL",
+      "n": 2684,
+      "xfp2_pred_r": 0.8163,
+      "actual2_pred_r": 0.8084,
+      "xfp1_pred_r": 0.8027,
+      "actual1_pred_r": 0.803
+    },
+    {
+      "pos": "QB",
+      "n": 307,
+      "xfp2_pred_r": 0.4482,
+      "actual2_pred_r": 0.4791,
+      "xfp1_pred_r": 0.334,
+      "actual1_pred_r": 0.4832
+    },
+    {
+      "pos": "RB",
+      "n": 718,
+      "xfp2_pred_r": 0.6637,
+      "actual2_pred_r": 0.6937,
+      "xfp1_pred_r": 0.6607,
+      "actual1_pred_r": 0.6917
+    },
+    {
+      "pos": "TE",
+      "n": 533,
+      "xfp2_pred_r": 0.654,
+      "actual2_pred_r": 0.6023,
+      "xfp1_pred_r": 0.651,
+      "actual1_pred_r": 0.5976
+    },
+    {
+      "pos": "WR",
+      "n": 1126,
+      "xfp2_pred_r": 0.664,
+      "actual2_pred_r": 0.6524,
+      "xfp1_pred_r": 0.647,
+      "actual1_pred_r": 0.6509
+    }
+  ]
+}

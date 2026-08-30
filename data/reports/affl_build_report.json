@@ -1,0 +1,53 @@
+{
+  "counts": {
+    "dim_owner": 19,
+    "dim_franchise": 19,
+    "dim_season": 13,
+    "dim_team_season": 150,
+    "fact_matchup": 1128,
+    "fact_team_week": 2298,
+    "fact_roster_week": 31250,
+    "fact_draft_pick": 2124,
+    "fact_transaction": 24295,
+    "fact_transaction_item": 49634,
+    "dim_player_espn": 982,
+    "fact_matchup_player_pre2018": 642,
+    "fact_week_coverage": 2298
+  },
+  "reconciliation": {
+    "pre2018": {
+      "ok": 392,
+      "bad": 190,
+      "worst": 39.0
+    },
+    "modern": {
+      "ok": 1596,
+      "bad": 0,
+      "worst": 2.842170943040401e-14
+    },
+    "pre2018_matchup": {
+      "ok": 45,
+      "bad": 15,
+      "worst": 35.0
+    }
+  },
+  "franchises": 19,
+  "active_2026": [
+    "f10s2014",
+    "f10s2016",
+    "f10s2024",
+    "f13s2026",
+    "f1s2014",
+    "f2s2015",
+    "f3s2014",
+    "f4s2019",
+    "f6s2014",
+    "f7s2014",
+    "f8s2014",
+    "f9s2014"
+  ],
+  "pre2018_unattributed": [
+    182,
+    1924.0
+  ]
+}

@@ -1,0 +1,5 @@
+data/raw/
+data/nfl.duckdb
+__pycache__/
+*.pyc
+cors_probe.json

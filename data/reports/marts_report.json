@@ -1,0 +1,21 @@
+{
+  "savant_bytes": 2266788,
+  "explore_bytes": 6221791,
+  "players": 941,
+  "stints": 7341,
+  "drafts": 2124,
+  "players_draft_only_patched": 23,
+  "trades": 196,
+  "explore_rows": 31250,
+  "season_rows": 7477,
+  "season_players_appended_nfl": 1192,
+  "def_board_rows": 1536,
+  "trade_count_check": 196,
+  "trade_validation": {
+    "events": 224,
+    "items_direct": 46,
+    "items_inferred": 150,
+    "unresolved": 28,
+    "custody_confirmed": 194
+  }
+}
