@@ -20,8 +20,11 @@ const PL = {}; S.players.forEach(p => PL[p.eid] = p);
 const YEARS = Object.keys(S.seasons).map(Number).sort((a,b)=>a-b);
 const DONE = YEARS.filter(y => S.seasons[y].complete);
 const LAST = DONE[DONE.length-1];
-const PALETTE = ['#00a2ff','#ff6a00','#c8ff00','#ffc400','#37d67a','#ff4d5e','#b078ff','#00e0d0',
- '#ff9dc7','#7dd3fc','#f97316','#a3e635','#facc15','#34d399','#f87171','#c084fc','#2dd4bf','#fda4af','#93c5fd'];
+/* 19 franchises → 19 hues, hand-spread so no two active-era franchises sit on
+   near-identical colors (old palette had 3 greens, 2 pinks, 3 light blues).
+   Color is a secondary cue — logos/codes are the primary franchise identity. */
+const PALETTE = ['#00a2ff','#ff6a00','#c8ff00','#ff5ce1','#2fe6c8','#ffc400','#9d7bff','#ff4d5e',
+ '#45d048','#93aaff','#d9a05b','#7ce4ff','#cc4bd6','#ff9db0','#00b37a','#9aa7b8','#5e7bff','#f5f9ff','#ffb26b'];
 const fColor = fid => PALETTE[(FIDX[fid]||0) % PALETTE.length];
 const teamOf = (s,tid) => (S.seasons[s]||{teams:[]}).teams.find(t=>t.tid===tid);
 const teamOfF = (s,fid) => (S.seasons[s]||{teams:[]}).teams.find(t=>t.fid===fid);
@@ -54,11 +57,18 @@ function logoHtml(fid, size, seasonCtx){
   const f = F[fid]; if(!f) return '';
   const t = seasonCtx!=null ? teamOfF(seasonCtx,fid) : null;
   const url = [(t&&t.logo), f.logo_url, bestLogo[fid]].find(u=>u && LOGOS[u]);
-  const szCls = size==='lg'?'lg':size==='xl'?'xl':'';
-  const px = size==='xl'?92:size==='lg'?64:26;
+  const szCls = size==='lg'?'lg':size==='xl'?'xl':size==='sm'?'sm':'';
+  const px = size==='xl'?92:size==='lg'?64:size==='sm'?18:26;
   if(url) return `<span class="logo lgbg ${szCls} ${logoCls[url]}" role="img" aria-label="${esc(f.display_name)} logo"></span>`;
-  return `<span class="ini logo ${szCls}" style="background:${fColor(fid)};width:${px}px;height:${px}px;font-size:${size==='xl'?26:size==='lg'?19:11}px">${esc(initials(f.display_name))}</span>`;
+  return `<span class="ini logo ${szCls}" style="background:${fColor(fid)};width:${px}px;height:${px}px;font-size:${size==='xl'?26:size==='lg'?19:size==='sm'?8:11}px">${esc(initials(f.display_name))}</span>`;
 }
+/* logo-as-cell-background class (data URI emitted once, referenced by class) */
+const fCellCls = fid => { const u = bestLogo[fid]; return u ? 'lgbg '+logoCls[u] : ''; };
+/* compact franchise identity chip: mini logo + abbrev code (+ optional name) */
+const fChip = (fid, withName, seasonCtx) => {
+  const f = F[fid]; if(!f) return '·';
+  return `<a class="fchip" href="#/f/${fid}" title="${esc(seasonCtx!=null?histName(seasonCtx,fid):f.display_name)}">${logoHtml(fid,'sm',seasonCtx)}<b>${esc(f.code||initials(f.display_name))}</b>${withName?`<span>${esc(seasonCtx!=null?histName(seasonCtx,fid):f.display_name)}</span>`:''}</a>`;
+};
 const frLink = (fid, seasonCtx, nameOverride) => {
   const f = F[fid]; if(!f) return '·';
   const nm = nameOverride || (seasonCtx!=null ? histName(seasonCtx,fid) : f.display_name);
@@ -126,6 +136,9 @@ function render(){
     else if(r==='methods') methodsView();
     else if(r==='explore') exploreView(qs);
     else { location.replace('#/'); return; }
+    /* phones: filter toolbars start collapsed so data leads the first screen */
+    if(typeof matchMedia==='function' && matchMedia('(max-width:900px)').matches)
+      app.querySelectorAll('details.mobile-filters[open]').forEach(d=>d.removeAttribute('open'));
   }catch(err){
     app.innerHTML = `<div class="wrap" style="padding:60px 0"><div class="notice">Render error: ${esc(err.message)}</div></div>`;
     console.error(err);
@@ -269,7 +282,12 @@ const ECY  = o=>Object.assign({type:'value', axisLine:{show:false}, axisTick:{sh
   axisLabel:{color:'#8fa2bd', fontFamily:'IBM Plex Mono', fontSize:10.5}, splitLine:{lineStyle:{color:'#1a2334'}}}, o||{});
 const ECTT = o=>Object.assign({trigger:'axis', backgroundColor:'#10141f', borderColor:'#2a3550', borderWidth:1,
   textStyle:{color:'#e6eefc', fontSize:12, fontFamily:'Inter'}, confine:true}, o||{});
-const chartBox = (id, h)=>`<div class="card chartbox" style="padding:12px 10px 6px"><div id="${id}" style="width:100%;height:${h}px"></div></div>`;
+/* min(px, vw) keeps chart heights proportional on phones — ECharts reads the computed height at init */
+const chartBox = (id, h)=>`<div class="card chartbox" style="padding:10px 8px 4px"><div id="${id}" style="width:100%;height:min(${h}px,${Math.max(46, Math.round(h/6.5))}vw)"></div></div>`;
+
+/* ECharts legend entries with the franchise logo as the legend icon (falls back to color swatch) */
+const fLegendData = items => items.map(it=>{ const u = bestLogo[it.fid];
+  return u? {name:it.name, icon:'image://'+LOGOS[u]} : {name:it.name}; });
 
 /* -- franchise trajectories (League Legacy 'League Ratings' equivalent) -- */
 const TRAJ = [
@@ -295,7 +313,8 @@ function drawTraj(mk){
     color: fs.map(f=>fColor(f.franchise_id)),
     tooltip: ECTT({valueFormatter:v=>v==null?'·':(m.k==='ap'||m.k==='share'? (+v).toFixed(1)+'%' : m.fmt(v)), order:'valueDesc'}),
     legend: {type:'scroll', top:0, textStyle:{color:'#9fb0c8', fontSize:11}, inactiveColor:'#39445e',
-             pageTextStyle:{color:'#9fb0c8'}, pageIconColor:'#8fa2bd', selected},
+             pageTextStyle:{color:'#9fb0c8'}, pageIconColor:'#8fa2bd', selected,
+             data:fLegendData(fs.map(f=>({fid:f.franchise_id, name:f.display_name}))), itemWidth:16, itemHeight:16},
     grid: {left:54, right:20, top:56, bottom:28},
     xAxis: ECX({data:DONE, boundaryGap:false}),
     yAxis: ECY(m.inv?{inverse:true, minInterval:1, min:1}:{}),
@@ -460,7 +479,8 @@ function drawSeasonRace(y){
   mkChart('racechart', {
     color: series.map(s=>fColor(s._fid)),
     tooltip: ECTT({order:'valueDesc', valueFormatter:f1}),
-    legend: {type:'scroll', top:0, textStyle:{color:'#9fb0c8', fontSize:10.5}, inactiveColor:'#39445e', pageTextStyle:{color:'#9fb0c8'}},
+    legend: {type:'scroll', top:0, textStyle:{color:'#9fb0c8', fontSize:10.5}, inactiveColor:'#39445e', pageTextStyle:{color:'#9fb0c8'},
+             data:fLegendData(series.map(s=>({fid:s._fid, name:s.name}))), itemWidth:15, itemHeight:15},
     grid: {left:56, right:18, top:52, bottom:26},
     xAxis: ECX({data: rh.weeks.map(w=>'W'+w)}),
     yAxis: ECY({scale:false}),
@@ -991,8 +1011,8 @@ function leagueRanks(){
   });
   const dr = {};
   S.drafts.forEach(d=>{
-    const o = dr[d.eid]=dr[d.eid]||{n:0,usd:0,par:0,peak:null};
-    o.n++; if(d.bid>0){ o.usd+=d.bid; if(!o.peak||d.bid>o.peak.bid) o.peak={bid:d.bid,s:d.s,fid:d.fid}; }
+    const o = dr[d.eid]=dr[d.eid]||{n:0,an:0,usd:0,par:0,peak:null};
+    o.n++; if(d.bid>0){ o.an++; o.usd+=d.bid; if(!o.peak||d.bid>o.peak.bid) o.peak={bid:d.bid,s:d.s,fid:d.fid}; }   // an = auction picks only (2014–15 snake picks carry bid 0)
     if(d.par!=null) o.par+=d.par;
   });
   const tr = {};
@@ -1040,14 +1060,17 @@ function playersView(){
     <h1 class="display">Players</h1>
     <p class="tag">Every player the league has ever held — and the ${f0(E.players.filter(p=>p[5]===0).length)} it never touched. Profiles join custody history, auction spend, and trades to full NFL game logs.</p></div>
     <div class="xbar">
+      <details class="mobile-filters" open>
+      <summary>Filters</summary>
       <div class="xrow"><span class="lbl">Scope</span>
         <span class="chip ${playerScope==='affl'?'on':''}" data-scope="affl">AFFL rostered</span>
-        <span class="chip ${playerScope==='nfl'?'on':''}" data-scope="nfl">All NFL 2014–${LAST}</span></div>
-      <div class="xrow"><span class="lbl">Position</span>${posChips}</div>
+        <span class="chip ${playerScope==='nfl'?'on':''}" data-scope="nfl">All NFL 2014–${LAST}</span>
+        <span class="lgsep"></span><span class="lbl" style="width:auto">Pos</span>${posChips}</div>
       <div class="xrow"><span class="lbl">Find</span>
         <input type="text" id="pq" class="searchbox" placeholder="Search players…" value="${esc(playerQ)}">
         <span class="lbl" style="width:auto;margin-left:14px">Rank by</span>
         <select id="psort" style="max-width:220px">${sorts.map(([v,l])=>`<option value="${v}" ${playerSort===v?'selected':''}>${l}</option>`).join('')}</select></div>
+      </details>
     </div>
     <div id="plist"></div></div>`;
   const draw = ()=>{
@@ -1067,22 +1090,22 @@ function playersView(){
       rows.sort((a,b)=>key(b)-key(a));
       const list = rows.slice(0,300);
       $('#plist').innerHTML = `<div class="tblwrap"><table class="tbl"><thead><tr>
-        <th class="l">#</th><th class="l">Player</th><th class="l">Pos</th>
+        <th class="l">#</th><th class="l">Player</th><th class="l">Pos</th><th class="l">Custody</th>
         <th class="sortable">AFFL pts</th><th class="sortable">Wks</th><th class="sortable">Starts</th>
         <th class="sortable" title="lifetime auction dollars spent on this player (2016+)">$ lifetime</th>
         <th class="sortable" title="career NFL fantasy points 2014-2025, std non-PPR">NFL FP</th>
-        <th class="sortable" title="career FP over expected (xfp_v2)">FPOE</th><th class="l">Custody</th></tr></thead><tbody>
+        <th class="sortable" title="career FP over expected (xfp_v2)">FPOE</th></tr></thead><tbody>
         ${list.map((r,i)=>{
           const hs = headshotUrl(r.p);
           return `<tr class="click" data-href="#/p/${r.p.eid}">
           <td class="l dim">${i+1}</td>
           <td class="l"><span style="display:inline-flex;align-items:center;gap:9px">${hs?`<img class="headshot" loading="lazy" src="${esc(hs)}" alt="" onerror="this.style.display='none'">`:''}<a href="#/p/${r.p.eid}">${esc(r.p.name)}</a>${r.p.draftOnly?' <span class="badge yellow" title="drafted, never held an observable roster week">draft-only</span>':''}</span></td>
           <td class="l pos">${esc(r.p.pos||'')}</td>
+          <td class="l">${r.fids.slice(0,6).map(f=>logoHtml(f)).join(' ')}</td>
           <td data-v="${r.affl}"><b>${f1(r.affl)}</b></td><td data-v="${r.wks}">${r.wks}</td><td data-v="${r.sts}">${r.sts}</td>
           <td data-v="${r.usd}">${r.usd?'$'+r.usd:'·'}</td>
           <td data-v="${r.nfp}">${f1(r.nfp)}</td>
-          <td data-v="${r.p.pos==='K'?-1e18:r.fpoe}" class="${r.p.pos==='K'?'':cls(r.fpoe)}">${r.p.pos==='K'?'·':signed(r.fpoe,f1)}</td>
-          <td class="l">${r.fids.slice(0,6).map(f=>logoHtml(f)).join(' ')}</td></tr>`;}).join('')}
+          <td data-v="${r.p.pos==='K'?-1e18:r.fpoe}" class="${r.p.pos==='K'?'':cls(r.fpoe)}">${r.p.pos==='K'?'·':signed(r.fpoe,f1)}</td></tr>`;}).join('')}
         </tbody></table></div>
         <p class="dim small" style="margin-top:8px">Showing ${list.length} of ${rows.length} — refine the search for deeper cuts. AFFL pts are ESPN applied totals while under custody; $ lifetime sums auction prices 2016+.</p>`;
     } else {
@@ -1133,18 +1156,26 @@ function custodyMapHtml(pi){
   E.rows.forEach(r=>{ if(r[C.p]===pi) (bySeason[r[C.s]] = bySeason[r[C.s]]||[]).push(r); });
   const custYears = Object.keys(bySeason).map(Number).sort((a,b)=>a-b);
   if(!custYears.length) return {html:'', legend:'', fids:[]};
-  const strip = custYears.map(y=>{
+  let anyEv = false;
+  const head = '<span></span>'+Array.from({length:18},(_,i)=>`<span class="wkh">${i+1}</span>`).join('');
+  const strip = head + custYears.map(y=>{
     const cells = [];
     for(let w=1; w<=18; w++){
       const r = bySeason[y].find(x=>x[C.w]===w);
       if(!r){ cells.push('<span class="cell"></span>'); continue; }
       const fid = E.franchises[r[C.f]][0];
-      cells.push(`<span class="cell on ${r[C.st]?'st':''}" title="${y} Wk ${w} · ${esc(histName(y,fid))}${r[C.ev]?' · held (slot unobservable)':r[C.st]?' · started':' · bench'}${r[C.affl]!=null?' · '+f1(r[C.affl])+' pts':''}" style="background:${fColor(fid)}"></span>`);
+      const lg = fCellCls(fid);
+      const state = r[C.ev]?'ev':r[C.st]?'st':'bn';
+      if(r[C.ev]) anyEv = true;
+      cells.push(`<span class="cell on ${state} ${lg}" title="${y} Wk ${w} · ${esc(histName(y,fid))}${r[C.ev]?' · held (slot unobservable)':r[C.st]?' · started':' · bench'}${r[C.affl]!=null?' · '+f1(r[C.affl])+' pts':''}"${lg?'':` style="background:${fColor(fid)}44"`}>${lg?'':`<i>${esc((F[fid]||{}).code||initials((F[fid]||{}).display_name))}</i>`}</span>`);
     }
     return `<span>${y}</span>${cells.join('')}`;
   }).join('');
   const fids = [...new Set([].concat(...Object.values(bySeason)).map(r=>E.franchises[r[C.f]][0]))];
-  const legend = fids.map(f=>`<span><span class="sw" style="background:${fColor(f)}"></span>${esc((F[f]||{}).display_name)}</span>`).join('');
+  const legend = fids.map(f=>fChip(f,true)).join('')
+    + `<span class="lgsep"></span><span class="lgst"><span class="cell demo st"></span>started</span>`
+    + `<span class="lgst"><span class="cell demo bn"></span>bench</span>`
+    + (anyEv?`<span class="lgst"><span class="cell demo ev"></span>held · slot unobservable</span>`:'');
   return {html:strip, legend, fids};
 }
 
@@ -1157,31 +1188,47 @@ function resumeHtml(p, pi){
   const bw = pi!=null? lr.bestWk[pi] : null;
   const bench = pi!=null? lr.benchLeft[pi] : null;
   const cell = (v,l,rk)=>`<div class="rcell"><div class="rv">${v}</div><div class="rl">${l}</div>${rk||''}</div>`;
+
+  /* Ownership lead: the franchise that has held this player the most */
+  const byF = {};
+  p.stints.forEach(s=>{ const o = byF[s.fid] = byF[s.fid]||{w:0,st:0}; o.w+=s.weeks; o.st+=s.starts; });
+  const top = Object.entries(byF).sort((a,b)=>b[1].w-a[1].w||b[1].st-a[1].st||String(a[0]).localeCompare(String(b[0])))[0];
+  const ownLead = top?`<a class="rlead" href="#/f/${top[0]}">${logoHtml(top[0],'lg')}
+    <span class="rlead-tx"><span class="rlead-nm">${esc((F[top[0]]||{}).display_name)}</span>
+    <span class="rlead-sub">most custody · <b>${top[1].w}</b> of ${wks} wks (${pct1(top[1].w/wks)})${top[1].st?` · ${top[1].st} starts`:''}</span></span></a>`:'';
   const own = [
     cell(f0(wks),'Custody weeks', rkChip(lr.weeks.m[p.eid], lr.weeks.n)),
     cell(f0(sts),'Starts'),
     cell(wks?pct1(sts/wks):'·','Start rate'),
-    cell(seasonsHeld,'Seasons held'),
+    cell(seasonsHeld,'Seasons'),
     cell(frs,'Franchises'),
-    cell(trN||'·','Trades involved'),
+    cell(trN||'·','Trades'),
   ].join('');
+
+  /* Draft value lead: average auction price (auction picks only — 2014–15 snake excluded) */
+  const avg = d&&d.an? d.usd/d.an : null;
+  const valLead = avg!=null?`<div class="rlead"><span class="rlead-big">$${Math.round(avg*10)/10}</span>
+    <span class="rlead-tx"><span class="rlead-nm">avg auction price</span>
+    <span class="rlead-sub">${d.an} auction${d.an>1?'s':''}${d.peak?` · peak $${d.peak.bid} in ${d.peak.s}`:''}</span></span></div>`:'';
   const val = [
-    cell(d&&d.usd?'$'+d.usd:'·','Lifetime auction $', d&&d.usd?rkChip(lr.usd.m[p.eid], lr.usd.n):''),
-    cell(d&&d.peak?'$'+d.peak.bid:'·', d&&d.peak?`Peak price · ${d.peak.s}`:'Peak price'),
+    cell(d&&d.usd?'$'+d.usd:'·','Lifetime $', d&&d.usd?rkChip(lr.usd.m[p.eid], lr.usd.n):''),
+    cell(d&&d.peak?'$'+d.peak.bid:'·', d&&d.peak?`Peak · ${d.peak.s}`:'Peak price'),
     cell(d?d.n:'·','Times drafted'),
     cell(d?signed(d.par,f1):'·','Career draft PAR', d?rkChip(lr.dpar.m[p.eid], lr.dpar.n):''),
   ].join('');
+
+  const perfLead = `<div class="rlead"><span class="rlead-big">${f1(p.afflPts)}</span>
+    <span class="rlead-tx"><span class="rlead-nm">AFFL pts under custody</span>
+    <span class="rlead-sub">${rkChip(lr.afflPts.m[p.eid], lr.afflPts.n)||'·'}${wks?` · ${f1(p.afflPts/wks)} / custody wk`:''}</span></span></div>`;
   const perf = [
-    cell(f1(p.afflPts),'AFFL pts under custody', rkChip(lr.afflPts.m[p.eid], lr.afflPts.n)),
-    cell(wks?f1(p.afflPts/wks):'·','Pts / custody week'),
-    cell(bw?f1(bw.v):'·', bw?`Best started reg-season wk · ${bw.s} W${bw.w}`:'Best started week (reg)', bw?rkChip(lr.bwk.m[String(pi)], lr.bwk.n):''),
+    cell(bw?f1(bw.v):'·', bw?`Best started wk · ${bw.s} W${bw.w}`:'Best started wk (reg)', bw?rkChip(lr.bwk.m[String(pi)], lr.bwk.n):''),
     cell(bench!=null?f1(bench):'·','Bench pts left (reg, 2018+)'),
   ].join('');
   return `<h2 class="sect">AFFL résumé <span class="sub">ranks are all-time among every player the league has held</span></h2>
   <div class="grid g3">
-    <div class="card"><div class="kicker">Ownership</div><div class="rgrid">${own}</div></div>
-    <div class="card"><div class="kicker">Draft value</div><div class="rgrid">${val}</div></div>
-    <div class="card"><div class="kicker">Production</div><div class="rgrid">${perf}</div></div>
+    <div class="card rcard"><div class="kicker">Ownership</div>${ownLead}<div class="rgrid">${own}</div></div>
+    <div class="card rcard"><div class="kicker">Draft value</div>${valLead}<div class="rgrid">${val}</div></div>
+    <div class="card rcard"><div class="kicker">Production</div>${perfLead}<div class="rgrid">${perf}</div></div>
   </div>`;
 }
 
@@ -1330,17 +1377,15 @@ function playerView(eid){
         <h1 class="display" style="font-size:clamp(30px,5vw,52px)">${esc(p.name)}</h1>
         <div class="statline">
           <div class="stat"><div class="v" style="color:${acc==='#31405e'?'var(--ink)':acc}">${f1(p.afflPts)}</div><div class="l">AFFL pts under custody</div></div>
-          <div class="stat"><div class="v">${p.stints.reduce((a,s)=>a+s.weeks,0)}</div><div class="l">Custody weeks</div></div>
-          <div class="stat"><div class="v">${p.stints.reduce((a,s)=>a+s.starts,0)}</div><div class="l">Starts</div></div>
-          <div class="stat"><div class="v">${[...new Set(p.stints.map(s=>s.fid))].length}</div><div class="l">Franchises</div></div>
+          <div class="stat"><div class="v">${p.stints.reduce((a,s)=>a+s.weeks,0)}<span class="vsub">/${p.stints.reduce((a,s)=>a+s.starts,0)}</span></div><div class="l">Custody wks / starts</div></div>
           ${cn?`<div class="stat"><div class="v">${f0(cn.g)}</div><div class="l">NFL games 14–${String(LAST).slice(2)}</div></div>
           <div class="stat"><div class="v">${f1(cn.fp)}</div><div class="l">NFL FP (std)</div></div>
           ${pos!=='K'?`<div class="stat"><div class="v ${cls(cn.fpoe2)}">${signed(cn.fpoe2,f1)}</div><div class="l">Career FPOE</div></div>`:''}`:''}
         </div>
       </div></div>
     ${p.stints.length===0?`<div class="notice" style="margin-top:14px">Drafted into the AFFL but never held for an observable roster week. Pre-2018, ESPN's historical rosters omit players dropped early — the draft record below is this player's entire observable league footprint.${p.draftOnly?' Name resolved from ESPN’s public player database.':''}</div>`:resumeHtml(p, pi)}
-    ${strip?`<h2 class="sect">Custody map <span class="sub">columns are NFL weeks · dot = started · pre-2018 bench custody is unobservable</span></h2>
-    <div class="card" style="overflow-x:auto"><div class="cust" style="min-width:640px">${strip}</div></div>
+    ${strip?`<h2 class="sect">Custody map <span class="sub">columns are NFL weeks · each cell is the holding franchise's logo · bright + lime bar = started · faded = bench</span></h2>
+    <div class="card" style="overflow-x:auto;padding:12px 14px"><div class="cust" style="min-width:760px">${strip}</div></div>
     <div class="legend">${legend}</div>`:''}
     <div class="grid g2" style="margin-top:22px">
       <div><h2 class="sect" style="margin-top:0">Custody stints</h2>
@@ -1481,10 +1526,9 @@ function seasonsView(){
     const pf = [...sd.teams].sort((a,b)=>b.pf-a.pf)[0];
     return `<div class="card" style="cursor:pointer" onclick="location.hash='#/s/${y}'">
       <div class="kicker">${y} · ${sd.teams.length} teams · ${sd.auction?'auction':'snake'}</div>
-      <div style="display:flex;gap:10px;align-items:center;margin:8px 0 4px">${logoHtml(c.fid,'',y)}
-        <div><div style="font-weight:700">${esc(c.name)}</div><div class="dim small">champion</div></div></div>
-      <div class="small muted">Runner-up: ${esc(ru?ru.name:'—')}</div>
-      <div class="small muted">Most PF: ${esc(pf.name)} (${f1(pf.pf)})</div></div>`;
+      <div style="display:flex;gap:9px;align-items:center;margin:6px 0 3px">${logoHtml(c.fid,'',y)}
+        <div style="min-width:0"><div style="font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">🏆 ${esc(c.name)}</div>
+        <div class="dim small" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">🥈 ${esc(ru?ru.name:'—')} · top PF ${esc(pf.name)} ${f1(pf.pf)}</div></div></div></div>`;
   }).join('');
   app.innerHTML = `<div class="wrap"><div class="hero"><div class="kicker">Every season preserved with its own names and logos</div>
     <h1 class="display">Seasons</h1></div><div class="grid g3">${cards}</div></div>`;
@@ -1558,8 +1602,7 @@ function seasonView(y){
     ${sd.complete?`<h2 class="sect">The race <span class="sub">cumulative points by week — hover to relive it</span></h2>
     ${chartBox('racechart', 380)}
     <h2 class="sect">Playoffs</h2>${bracket}
-    <h2 class="sect">Draft <span class="sub">${sd.auction?'auction prices':'snake — no auction values (2014–2015)'}</span></h2>
-    <p><a class="btn ghost" href="#/drafts/${y}">Open the ${y} draft board →</a></p>
+    <div class="presets" style="margin-top:12px"><a class="chip" href="#/drafts/${y}">🏷 Open the ${y} draft board — ${sd.auction?'auction prices & PAR':'snake draft (no auction values 2014–15)'}</a></div>
     <h2 class="sect">Weekly storylines <span class="sub">high score · hammer · heartbreaker</span></h2>
     <div class="pill-scroll" style="align-items:stretch">${stories}</div>
     <h2 class="sect">Regular season results</h2><div class="grid g2">${weekBlocks}</div>
@@ -1581,10 +1624,13 @@ function draftsView(scope){
     const auction = S.seasons[a.s] && S.seasons[a.s].auction;
     return auction ? b.bid-a.bid : a.pick-b.pick;
   });
+  let _prevS = null;
   const rows = picks.map(d=>{
     const rowAuction = S.seasons[d.s] && S.seasons[d.s].auction;
     const perDollar = rowAuction && d.bid>0 && d.par!=null ? d.par/d.bid : null;
-    return `<tr>${allSeasons?`<td data-v="${d.s}">${d.s}</td>`:''}<td>${rowAuction?'$'+d.bid:('#'+d.pick)}</td>
+    const anchor = allSeasons && d.s!==_prevS ? ` id="dy${d.s}"` : '';
+    _prevS = d.s;
+    return `<tr${anchor}>${allSeasons?`<td data-v="${d.s}">${d.s}</td>`:''}<td>${rowAuction?'$'+d.bid:('#'+d.pick)}</td>
     <td class="l">${plLink(d.eid)} ${posChip((PL[d.eid]||{}).pos)}</td>
     <td class="l">${frLink(d.fid, d.s)}</td>
     <td class="l">${d.keeper?'<span class="badge blue">keeper</span>':''}</td>
@@ -1607,6 +1653,8 @@ function draftsView(scope){
     ${showScatter?`<h2 class="sect" style="margin-top:0">Price vs. payoff <span class="sub">${allSeasons?`${auctionYears[0]}–${auctionYears[auctionYears.length-1]} · all auction seasons combined`:`${y} · every dollar against the PAR it bought`}</span></h2>
     ${chartBox('draftscatter', 380)}
     <p class="dim small" style="margin:6px 0 18px">Up and left is a steal; down and right is a bust. Hover any dot. Draft PAR is par_v1 — points delivered to the drafting franchise above a replacement start.</p>`:''}
+    <h2 class="sect">${allSeasons?'Every pick, every draft':'The board'} <span class="sub">${allSeasons?`${f0(picks.length)} picks · sortable — click a year to jump`:y+' · sortable'}</span></h2>
+    ${allSeasons?`<div class="presets" style="margin:2px 0 10px">${[...new Set(picks.map(d=>d.s))].map(s=>`<span class="chip" data-jump="dy${s}">${s}</span>`).join('')}</div>`:''}
     <div class="tblwrap"><table class="tbl"><thead><tr>${allSeasons?'<th class="sortable">Season</th>':''}<th>${allSeasons?'Price / Pick':(isAuction?'Price':'Pick')}</th><th class="l">Player</th><th class="l">Franchise</th><th class="l"></th>
       <th class="sortable">Wks</th><th class="sortable">Starts</th><th class="sortable">Pts for them</th><th class="sortable">Draft PAR</th><th class="sortable">PAR/$</th></tr></thead><tbody>${rows}</tbody></table></div>
     <div class="grid g2" style="margin-top:26px">
@@ -1618,6 +1666,10 @@ function draftsView(scope){
     <p class="dim small" style="margin-top:14px">Draft PAR (par_v1): AFFL points delivered to the drafting franchise while rostered, minus replacement-level points for the position over those weeks. Replacement baselines per season are listed in <a href="#/methods">Methodology</a>.</p>
   </div>`;
   sortableTable(app);
+  app.querySelectorAll('[data-jump]').forEach(c=>c.onclick=()=>{
+    const el = document.getElementById(c.dataset.jump);
+    if(el) el.scrollIntoView({block:'start', behavior:'smooth'});
+  });
   if(showScatter) drawDraftScatter(allSeasons?'all':y);
   drawSpendMix();
 }
@@ -2122,10 +2174,12 @@ function boardsView(qs){
     <h1 class="display">Leaderboards</h1></div>
     <div class="presets">${QUICK_BOARDS.map(([k,l])=>`<a class="chip ${m===k?'on lime':''}" href="${link({m:k,g:null,v:null})}">${l}</a>`).join('')}</div>
     <div class="xbar">
+      <details class="mobile-filters" open>
+      <summary>Filters</summary>
       <div class="xrow"><span class="lbl">Season</span>
         <a class="chip ${y===0?'on':''}" href="${link({y:0})}">All Seasons · Career</a>
-        ${YEARS.filter(x=>x<=LAST).map(x=>`<a class="chip ${y===x?'on':''}" href="${link({y:x})}">${x}</a>`).join('')}</div>
-      <div class="xrow"><span class="lbl">Position</span>
+        ${YEARS.filter(x=>x<=LAST).map(x=>`<a class="chip ${y===x?'on':''}" href="${link({y:x})}">${x}</a>`).join('')}
+        <span class="lgsep"></span><span class="lbl" style="width:auto">Pos</span>
         ${['QB','RB','WR','TE','K'].map(p=>{
           const next = pos.includes(p)? pos.filter(x=>x!==p) : [...pos,p];
           return `<a class="chip ${pos.includes(p)?'on':''}" href="${link({pos:next.join(',')})}">${p}</a>`;}).join('')}</div>
@@ -2137,6 +2191,7 @@ function boardsView(qs){
         <select id="bn">${[25,50,100,250].map(n=>`<option ${lim===n?'selected':''}>${n}</option>`).join('')}</select>
         <a class="chip ${asc?'on':''}" href="${link({d:asc?'':'a'})}" title="flip sort direction">${asc?'▲ ascending':'▼ descending'}</a>
         <a class="chip ${scope==='ro'?'on':''}" href="${link({scope:scope==='ro'?'all':'ro'})}" title="restrict to players who have been on an AFFL roster">AFFL-rostered only</a></div>
+      </details>
     </div>
     <div class="resmeta"><span>${shown.length} of ${f0(list.length)} qualifying</span><span>${y>0?y:'careers 2014–'+LAST}</span><span>${esc(bm.l)}${bm.den?' (rate)':''}</span><span>scoring: ESPN standard non-PPR · xFP v2</span></div>
     <div class="tblwrap"><table class="tbl"><thead><tr>
@@ -2229,7 +2284,19 @@ function compareView(qs){
       <div class="xrow"><span class="lbl">Add player</span><input type="text" id="cq" class="searchbox" placeholder="Type a name…" autocomplete="off"><div id="csug" class="presets" style="margin-left:10px"></div></div>
       <div class="xrow"><span class="lbl">Measure</span><select id="cm">${BOARDS.map(b=>`<option value="${b.k}" ${b.k===m?'selected':''}>${b.l}</option>`).join('')}</select></div>
     </div>
-    ${sel.length? `<div class="grid g${Math.min(4,Math.max(2,sel.length))}" style="margin-top:16px">${cards}</div>` : '<p class="dim" style="margin-top:20px">Add two or more players to compare their NFL seasons on any measure.</p>'}
+    ${sel.length? `<div class="grid g${Math.min(4,Math.max(2,sel.length))}" style="margin-top:16px">${cards}</div>` : (()=>{
+      const byPos = {QB:[],RB:[],WR:[],TE:[]};
+      careerNfl().forEach((c,pi)=>{ const p=EPOS[pi]; if(byPos[p]) byPos[p].push([pi,c.fp]); });
+      const top = p=>byPos[p].sort((a,b)=>b[1]-a[1]).slice(0,4).map(x=>x[0]);
+      const mk = (icon,l,ps,mm)=>`<a class="chip" href="${cLink(ps,mm)}">${icon} ${l}</a>`;
+      return `<p class="dim" style="margin-top:16px">Add two or more players — or start from a rivalry:</p>
+      <div class="presets">
+        ${mk('⚡','Era QBs — top 4 by career FP', top('QB'))}
+        ${mk('🏃','Bell-cow RBs — top 4', top('RB'))}
+        ${mk('🎯','Alpha WRs — top 4', top('WR'))}
+        ${mk('🧲','TE royalty — top 4', top('TE'))}
+        ${mk('📈','Top 4 RBs on FPOE', byPos.RB.length?[...byPos.RB].sort((a,b)=>{const ca=careerNfl().get(a[0]),cb=careerNfl().get(b[0]);return (cb?cb.fpoe2:0)-(ca?ca.fpoe2:0);}).slice(0,4).map(x=>x[0]):[], 'fpoe2')}
+      </div>`;})()}
     ${sel.length>=2? `${radarEligible>=2?`<h2 class="sect">Career shape <span class="sub">percentile within each player's own position · careers with 16+ games</span></h2>
     ${chartBox('cmpradar', 360)}`:''}
     <h2 class="sect">${esc(bm.l)} by season <span class="sub">bars share one scale${bm.den?' · rate over each season':''}</span></h2>

@@ -37,14 +37,14 @@ nav.mainnav a.explore-cta.on{color:#0a0d13; background:var(--lime); border-color
   nav.mainnav{flex:1;min-width:0}
   .ver{display:none}
 }
-footer{border-top:1px solid var(--rule); margin-top:70px; padding:26px 0 60px; color:var(--ink3); font-size:12.5px}
+footer{border-top:1px solid var(--rule); margin-top:38px; padding:18px 0 42px; color:var(--ink3); font-size:12.5px}
 footer .wrap{display:flex; flex-wrap:wrap; gap:8px 30px}
 
 /* ---- typography ---- */
-h1.display{font-family:'Barlow Condensed'; font-weight:800; font-size:clamp(38px,6vw,64px);
+h1.display{font-family:'Barlow Condensed'; font-weight:800; font-size:clamp(32px,4.6vw,48px);
   line-height:.95; letter-spacing:.01em; text-transform:uppercase}
-h2.sect{font-family:'Barlow Condensed'; font-weight:700; font-size:clamp(21px,2.6vw,27px);
-  letter-spacing:.05em; text-transform:uppercase; color:var(--ink); margin:34px 0 12px;
+h2.sect{font-family:'Barlow Condensed'; font-weight:700; font-size:clamp(19px,2.2vw,24px);
+  letter-spacing:.05em; text-transform:uppercase; color:var(--ink); margin:22px 0 9px;
   display:flex; align-items:center; gap:10px}
 h2.sect::after{content:""; flex:1; height:1px; background:var(--rule)}
 h2.sect .sub{font-family:Inter; font-size:12px; font-weight:500; color:var(--ink3); text-transform:none; letter-spacing:0}
@@ -53,25 +53,31 @@ h2.sect .sub{font-family:Inter; font-size:12px; font-weight:500; color:var(--ink
 .small{font-size:12.5px}
 
 /* ---- cards / layout ---- */
-.card{background:var(--card); border:1px solid var(--rule); border-radius:var(--radius); padding:16px 18px}
-.grid{display:grid; gap:14px}
+.card{background:var(--card); border:1px solid var(--rule); border-radius:var(--radius); padding:12px 14px}
+.grid{display:grid; gap:11px}
 .g2{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
 .g3{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
 .g4{grid-template-columns:repeat(auto-fit,minmax(190px,1fr))}
-.statline{display:flex; flex-wrap:wrap; gap:8px 26px; margin:10px 0}
-.stat .v{font-family:'Barlow Condensed'; font-weight:700; font-size:30px; line-height:1}
-.stat .l{font-size:11px; color:var(--ink3); text-transform:uppercase; letter-spacing:.08em}
+.statline{display:flex; flex-wrap:wrap; gap:6px 22px; margin:8px 0 4px}
+.stat .v{font-family:'Barlow Condensed'; font-weight:700; font-size:26px; line-height:1}
+.stat .v .vsub{font-size:17px; color:var(--ink2); font-weight:600}
+.stat .l{font-size:10.5px; color:var(--ink3); text-transform:uppercase; letter-spacing:.07em}
+/* denser identity chips inside data tables — one row-height standard */
+.tbl .fr{gap:6px}
+.tbl .logo{width:20px; height:20px; border-radius:5px}
+.tbl .ini{width:20px!important; height:20px!important; font-size:9px!important}
+.tbl .headshot{width:38px; height:27px}
 
 /* ---- tables ---- */
 .tblwrap{overflow-x:auto; border:1px solid var(--rule); border-radius:var(--radius); background:var(--card)}
-table.tbl{border-collapse:collapse; width:100%; font-size:13.5px}
-.tbl th{font:600 11px/1.3 Inter; letter-spacing:.07em; text-transform:uppercase; color:var(--ink3);
-  text-align:right; padding:9px 10px; border-bottom:1px solid var(--rule); white-space:nowrap; position:sticky; top:0; background:var(--card); z-index:2}
+table.tbl{border-collapse:collapse; width:100%; font-size:13px}
+.tbl th{font:600 10.5px/1.3 Inter; letter-spacing:.06em; text-transform:uppercase; color:var(--ink3);
+  text-align:right; padding:7px 9px; border-bottom:1px solid var(--rule); white-space:nowrap; position:sticky; top:0; background:var(--card); z-index:2}
 .tbl th.l, .tbl td.l{text-align:left}
 .tbl th.sortable{cursor:pointer; user-select:none}
 .tbl th.sortable:hover{color:var(--ink)}
 .tbl th.sorted{color:var(--blue)}
-.tbl td{padding:7.5px 10px; border-bottom:1px solid #141a28; text-align:right; white-space:nowrap;
+.tbl td{padding:5.5px 9px; border-bottom:1px solid #141a28; text-align:right; white-space:nowrap;
   font-variant-numeric:tabular-nums}
 .tbl tr:last-child td{border-bottom:none}
 .tbl tbody tr:hover{background:var(--card2)}
@@ -103,22 +109,22 @@ table.tbl{border-collapse:collapse; width:100%; font-size:13.5px}
 .title-chip{display:inline-flex; align-items:center; gap:5px; color:var(--yellow); font-weight:700}
 
 /* ---- home hero ---- */
-.hero{padding:52px 0 8px}
-.hero .tag{color:var(--ink2); max-width:620px; margin-top:12px; font-size:15.5px}
-.champbar{display:flex; flex-wrap:wrap; gap:16px; align-items:center; margin:26px 0 6px;
+.hero{padding:24px 0 4px}
+.hero .tag{color:var(--ink2); max-width:640px; margin-top:7px; font-size:14px}
+.champbar{display:flex; flex-wrap:wrap; gap:14px; align-items:center; margin:16px 0 4px;
   background:linear-gradient(120deg,#101624,#0e1119 60%); border:1px solid var(--rule);
-  border-radius:14px; padding:18px 22px}
-.champbar .cup{font-size:34px}
-.timeline{display:flex; gap:6px; overflow-x:auto; padding:8px 0 14px}
-.timeline .yr{flex:none; text-align:center; padding:9px 10px; background:var(--card);
-  border:1px solid var(--rule); border-radius:10px; min-width:86px}
+  border-radius:12px; padding:12px 16px}
+.champbar .cup{font-size:30px}
+.timeline{display:flex; gap:6px; overflow-x:auto; padding:6px 0 10px}
+.timeline .yr{flex:none; text-align:center; padding:7px 8px; background:var(--card);
+  border:1px solid var(--rule); border-radius:10px; min-width:82px}
 .timeline .yr .y{font:700 12px 'IBM Plex Mono'; color:var(--ink3)}
 .timeline .yr img{margin:6px auto 4px; display:block}
 .timeline .yr .n{font-size:10.5px; color:var(--ink2); max-width:110px; white-space:normal; line-height:1.25}
 
 /* ---- explore ---- */
 .xbar{background:var(--card); border:1px solid var(--rule); border-radius:var(--radius);
-  padding:14px 16px; margin:14px 0; display:flex; flex-direction:column; gap:11px}
+  padding:11px 13px; margin:12px 0; display:flex; flex-direction:column; gap:9px}
 .xrow{display:flex; flex-wrap:wrap; gap:8px 10px; align-items:center}
 .xrow .lbl{font:600 10.5px/1 Inter; letter-spacing:.1em; text-transform:uppercase; color:var(--ink3); width:74px; flex:none}
 select,input[type=text],input[type=number]{background:var(--card2); color:var(--ink); border:1px solid var(--rule);
@@ -148,13 +154,34 @@ select:hover,input:hover{border-color:#2a3750}
   border-radius:9px; padding:9px 12px; font-size:12.5px; display:none; z-index:5; max-width:290px}
 canvas{max-width:100%}
 
-/* ---- player custody strip ---- */
-.cust{display:grid; grid-template-columns:44px repeat(18,1fr); gap:2px; align-items:center; font:600 10px 'IBM Plex Mono'; color:var(--ink3)}
-.cust .cell{height:17px; border-radius:3px; background:#10151f; position:relative}
-.cust .cell.on{outline:1px solid #ffffff22}
-.cust .cell.st::after{content:""; position:absolute; inset:4.5px; border-radius:99px; background:#ffffffd8}
-.legend{display:flex; flex-wrap:wrap; gap:7px 14px; margin:8px 0; font-size:12px; color:var(--ink2)}
+/* ---- player custody strip (cells are franchise logos, not palette colors) ---- */
+.cust{display:grid; grid-template-columns:44px repeat(18,1fr); gap:3px; align-items:center; font:600 10px 'IBM Plex Mono'; color:var(--ink3)}
+.cust .wkh{text-align:center; font-size:9.5px; color:var(--ink3)}
+.cust .cell{height:24px; border-radius:4px; background-color:#10151f; position:relative; background-size:cover; background-position:center; overflow:hidden}
+.cust .cell.on{outline:1px solid #ffffff24}
+.cust .cell.bn{opacity:.32; filter:grayscale(.55)}
+.cust .cell.ev{opacity:.55; outline:1px dashed #ffffff40}
+.cust .cell.st{outline:1px solid #ffffff55}
+.cust .cell.st::after{content:""; position:absolute; left:0; right:0; bottom:0; height:3px; background:var(--lime)}
+.cust .cell i{position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+  font:700 9px 'Barlow Condensed'; font-style:normal; color:var(--ink); letter-spacing:.02em}
+.legend{display:flex; flex-wrap:wrap; gap:7px 16px; margin:8px 0; font-size:12px; color:var(--ink2); align-items:center}
 .legend .sw{display:inline-block; width:11px; height:11px; border-radius:3px; margin-right:5px; vertical-align:-1px}
+.legend .cell{display:inline-block; width:26px; height:15px; border-radius:3px; background-color:#31405e; position:relative; margin-right:6px; vertical-align:-3px; overflow:hidden}
+.legend .cell.bn{opacity:.32; filter:grayscale(.55)}
+.legend .cell.ev{opacity:.55; outline:1px dashed #ffffff40}
+.legend .cell.st{outline:1px solid #ffffff55}
+.legend .cell.st::after{content:""; position:absolute; left:0; right:0; bottom:0; height:3px; background:var(--lime)}
+.lgsep{width:1px; height:16px; background:var(--rule); display:inline-block}
+.lgst{display:inline-flex; align-items:center; color:var(--ink3); font-size:11.5px; white-space:nowrap}
+
+/* ---- compact franchise chip: mini logo + abbrev code ---- */
+.fchip{display:inline-flex; align-items:center; gap:5px; color:var(--ink2); font-size:12px; min-width:0}
+.fchip b{font:700 11px 'IBM Plex Mono'; color:var(--ink); letter-spacing:.03em}
+.fchip span{white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:170px}
+.fchip:hover{text-decoration:none}
+.fchip:hover span{color:var(--ink)}
+.logo.sm{width:18px; height:18px; border-radius:4px}
 
 /* ---- bracket ---- */
 .bracket{display:flex; gap:16px; overflow-x:auto; padding-bottom:6px}
@@ -166,6 +193,7 @@ canvas{max-width:100%}
 .game .l2{color:var(--ink3)}
 
 /* misc */
+tr[id^="dy"]{scroll-margin-top:72px}
 .notice{border:1px solid #5c470a; background:#191507; color:#e8d9a0; padding:10px 14px; border-radius:9px; font-size:13px}
 .searchbox{width:min(420px,100%)}
 .pill-scroll{display:flex; gap:6px; overflow-x:auto; padding-bottom:4px}
@@ -178,6 +206,13 @@ details.mobile-filters summary{cursor:pointer; font-weight:700; color:var(--ink2
 @media (max-width:900px){
   details.mobile-filters{display:block}
   .xrow .lbl{width:100%}
+}
+@media (max-width:600px){
+  .statline{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px 10px}
+  .stat .v{font-size:20px}
+  .stat .l{font-size:9.5px; letter-spacing:.04em}
+  .hero{padding:16px 0 2px}
+  h2.sect{margin:18px 0 8px}
 }
 
 /* ---- Luck & Skill ---- */
@@ -202,14 +237,26 @@ h3.sect.small{font-size:15px}
 @media(max-width:560px){.grid.g4{grid-template-columns:1fr}}
 
 /* ---- player profile (players overhaul) ---- */
-.phero{display:flex; gap:24px; align-items:center; flex-wrap:wrap; margin-top:34px;
-  border:1px solid var(--rule); border-radius:16px; padding:24px 26px}
-.hshot{width:148px; height:108px; object-fit:cover; object-position:top; border-radius:14px;
+.phero{display:flex; gap:18px; align-items:center; flex-wrap:wrap; margin-top:16px;
+  border:1px solid var(--rule); border-radius:14px; padding:14px 18px}
+.hshot{width:118px; height:88px; object-fit:cover; object-position:top; border-radius:12px;
   border:1px solid var(--rule); background:var(--card2); flex:none}
-@media (max-width:600px){ .hshot{width:104px; height:78px} }
-.rgrid{display:grid; grid-template-columns:repeat(auto-fit,minmax(118px,1fr)); gap:12px 14px; margin-top:10px}
-.rcell .rv{font-family:'Barlow Condensed'; font-weight:700; font-size:23px; line-height:1.05}
-.rcell .rl{font-size:10.5px; color:var(--ink3); text-transform:uppercase; letter-spacing:.06em; margin-top:2px}
+@media (max-width:600px){ .hshot{width:96px; height:72px} }
+.rgrid{display:grid; grid-template-columns:repeat(auto-fit,minmax(94px,1fr)); gap:7px 10px; margin-top:9px}
+.rcell .rv{font-family:'Barlow Condensed'; font-weight:700; font-size:19px; line-height:1.05}
+.rcell .rl{font-size:10px; color:var(--ink3); text-transform:uppercase; letter-spacing:.05em; margin-top:2px}
+/* résumé card lead rows */
+.rcard .kicker{margin-bottom:2px}
+.rlead{display:flex; align-items:center; gap:11px; padding:8px 0 9px; border-bottom:1px solid var(--rule); min-width:0}
+a.rlead:hover{text-decoration:none}
+a.rlead:hover .rlead-nm{color:var(--blue)}
+.rlead .logo.lg{width:46px; height:46px; border-radius:10px}
+.rlead-big{font-family:'Barlow Condensed'; font-weight:800; font-size:33px; line-height:1; color:var(--ink); flex:none}
+.rlead-tx{display:flex; flex-direction:column; gap:2px; min-width:0}
+.rlead-nm{font-family:'Barlow Condensed'; font-weight:700; font-size:17px; line-height:1.05; color:var(--ink);
+  text-transform:uppercase; letter-spacing:.03em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.rlead-sub{font-size:11.5px; color:var(--ink2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.rlead-sub b{color:var(--ink)}
 .rk{display:inline-block; margin-top:3px; font:600 10.5px 'IBM Plex Mono'; color:var(--yellow)}
 .rk .dim{color:var(--ink3)}
 .pct-row{display:grid; grid-template-columns:minmax(118px,168px) 1fr 64px 30px; gap:10px; align-items:center; padding:4.5px 0}
