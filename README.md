@@ -27,13 +27,18 @@ The statistical record of the AFFL (ESPN league 51418), 2014-2026 pre-draft.
 12. python3 site/build_site.py             # -> site/index.html + docs/index.html (Pages mirror)
 
 ## Deploy (GitHub Pages)
-The build mirrors the single-file site into docs/. On GitHub: Settings -> Pages ->
+The build writes docs/ as a slim shell (docs/index.html) that fetches the marts from
+docs/data/ same-origin (Pages serves static files; the sandboxed artifact host does not,
+which is why site/index.html inlines everything instead). On GitHub: Settings -> Pages ->
 Source "Deploy from a branch" -> branch `main`, folder `/docs`. The site then serves at
 https://rdsciv.github.io/afflhyperanalytics/. NOTE: a Pages site is publicly reachable at that
 URL regardless of repo visibility (access control for Pages is Enterprise-only), and on
 the Free plan Pages requires a PUBLIC repo. The committed affl.db is sanitized
 (sanitize_db.py): zero member SWIDs/ids — verified by regenerating all marts
 byte-identical after stripping. ESPN cookies never enter the repo.
+GitHub-tree note: the API mirror excludes data/affl.db (binary over a text-only file
+API) and the built site/index.html (over the transport cap); both regenerate via the
+pipeline, and the full git history incl. both lives in the thread's affl-savant bundles.
 
 Canon: franchise identity follows OWNERS (union-find on owner display names), never ESPN slot ids.
 2026 is pre-draft planning only. 2014-15 snake drafts excluded from auction analysis.

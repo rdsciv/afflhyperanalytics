@@ -89,10 +89,61 @@ out = SITE / "index.html"
 out.write_text(html)
 print("wrote %s  (%.2f MB)" % (out, out.stat().st_size / 1e6))
 
-# GitHub Pages copy: Pages (deploy-from-branch) serves only / or /docs, so the
-# built site is mirrored into docs/. .nojekyll skips Jekyll processing.
+# GitHub Pages variant: unlike the sandboxed artifact host (no CORS -> data
+# must be inline), Pages serves same-origin static files, so docs/ ships a
+# slim shell that fetches the marts. This also keeps every pushed file under
+# the GitHub MCP transport cap (~4MB params): explore_data is split in half.
 docs = ROOT / "docs"
-docs.mkdir(exist_ok=True)
-(docs / "index.html").write_text(html)
+data_dir = docs / "data"
+data_dir.mkdir(parents=True, exist_ok=True)
 (docs / ".nojekyll").write_text("")
-print("wrote %s  (Pages mirror)" % (docs / "index.html"))
+
+ex = json.loads(explore)
+rows = ex.pop("rows")
+half = len(rows) // 2
+ex_a = dict(ex, rows=rows[:half])
+ex_b = {"rows": rows[half:]}
+def _w(name, obj):
+    p = data_dir / name
+    p.write_text(json.dumps(obj, separators=(",", ":"), ensure_ascii=False))
+    return p.stat().st_size
+sizes = {
+    "savant.json": (data_dir / "savant.json").write_text(savant),
+    "explore_a.json": _w("explore_a.json", ex_a),
+    "explore_b.json": _w("explore_b.json", ex_b),
+    "luck.json": (data_dir / "luck.json").write_text(luck),
+    "logos.json": (data_dir / "logos.json").write_text(logos),
+}
+
+shell = html.split("<script>window.SAVANT=")[0]
+shell = shell.replace("</head>", "<style>#bootmsg{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;font:600 14px 'IBM Plex Mono',monospace;color:#8fa2bd;background:#0a0d13;z-index:99}</style></head>")
+shell += """<div id="bootmsg">loading the record… <span id="bootpct"></span></div>
+<script>window.VALID=__VALID__;</script>
+<script>
+(function(){
+  var files = ['data/savant.json','data/explore_a.json','data/explore_b.json','data/luck.json','data/logos.json'];
+  var done = 0, pct = document.getElementById('bootpct');
+  function got(r){ if(!r.ok) throw new Error(r.url+' -> '+r.status); done++; if(pct) pct.textContent = done+'/'+files.length; return r.json(); }
+  Promise.all(files.map(function(f){ return fetch(f).then(got); })).then(function(d){
+    window.SAVANT = d[0];
+    var ex = d[1]; ex.rows = ex.rows.concat(d[2].rows);
+    window.EXPLORE = ex;
+    window.LUCK = d[3];
+    window.LOGOS = d[4];
+    document.getElementById('bootmsg').remove();
+    __boot();
+  }).catch(function(e){
+    document.getElementById('bootmsg').textContent = 'failed to load data: '+e.message;
+  });
+})();
+function __boot(){
+__JS__
+}
+</script>
+</body>
+</html>"""
+shell = shell.replace("__VALID__", json.dumps(valid)).replace("__JS__", js)
+(docs / "index.html").write_text(shell)
+print("wrote %s  (Pages shell, %.2f MB) + data/ splits: %s"
+      % (docs / "index.html", (docs / "index.html").stat().st_size / 1e6,
+         {k: "%.2f MB" % (v / 1e6) for k, v in sizes.items()}))
