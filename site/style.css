@@ -32,6 +32,11 @@ nav.mainnav a.on{color:var(--canvas); background:var(--blue)}
 nav.mainnav a.explore-cta{color:var(--lime); border:1px solid #37430a}
 nav.mainnav a.explore-cta.on{color:#0a0d13; background:var(--lime); border-color:var(--lime)}
 .ver{margin-left:auto; font:11px/1 'IBM Plex Mono'; color:var(--ink3); white-space:nowrap}
+@media (max-width:700px){
+  .topbar-in{gap:10px}
+  nav.mainnav{flex:1;min-width:0}
+  .ver{display:none}
+}
 footer{border-top:1px solid var(--rule); margin-top:70px; padding:26px 0 60px; color:var(--ink3); font-size:12.5px}
 footer .wrap{display:flex; flex-wrap:wrap; gap:8px 30px}
 
@@ -176,7 +181,7 @@ details.mobile-filters summary{cursor:pointer; font-weight:700; color:var(--ink2
 }
 
 /* ---- Luck & Skill ---- */
-.band{position:relative;display:block;height:8px;border-radius:4px;background:var(--line);overflow:hidden}
+.band{position:relative;display:block;height:8px;border-radius:4px;background:var(--rule);overflow:hidden}
 .band-in{position:absolute;top:0;height:100%;background:linear-gradient(90deg,rgba(0,162,255,.35),rgba(0,162,255,.7));border-radius:4px}
 .band-mk{position:absolute;top:-3px;width:2px;height:14px;background:var(--amber,#ffc400);box-shadow:0 0 0 1px rgba(0,0,0,.5)}
 .mtx{overflow:auto;max-width:100%}
@@ -187,7 +192,7 @@ th.rot{font-size:10px;letter-spacing:.04em;color:var(--ink3);white-space:nowrap;
 .tbl.mono td{font-variant-numeric:tabular-nums}
 h3.sect.small{font-size:15px}
 /* ---- leaderboards / compare / heatmap (upgrade v3) ---- */
-.barw{display:block;height:9px;border-radius:5px;background:var(--line);overflow:hidden;min-width:80px}
+.barw{display:block;height:9px;border-radius:5px;background:var(--rule);overflow:hidden;min-width:80px}
 .bar{display:block;height:100%;background:linear-gradient(90deg,rgba(0,162,255,.45),rgba(0,162,255,.85));border-radius:5px}
 .bar.barneg{background:linear-gradient(90deg,rgba(255,77,94,.45),rgba(255,77,94,.85))}
 .heat td.heatc{min-width:30px;color:#eaf2ff;font-weight:600;text-shadow:0 1px 2px rgba(0,0,0,.5)}

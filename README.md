@@ -4,7 +4,7 @@ The statistical record of the AFFL (ESPN league 51418), 2014-2026 pre-draft.
 
 ## Layout
 - pipeline/   fetch + build scripts (ESPN snapshots -> affl.db; nflverse -> nfl.duckdb; bridge; marts)
-- data/affl.db          canonical league warehouse (SQLite) - committed
+- data/affl.db          canonical league warehouse (SQLite) - local/full-bundle only; omitted from the GitHub API mirror
 - data/nfl.duckdb       NFL warehouse (DuckDB) - rebuild: fetch_nflverse.py + build_nfl_db.py
 - data/marts/           versioned site payloads (JSON) + inlined logos
 - data/reports/         build/validation reports
@@ -25,16 +25,18 @@ The statistical record of the AFFL (ESPN league 51418), 2014-2026 pre-draft.
 10. python3 pipeline/league_metrics.py     # luck/skill + rankheat_v1 + streaks_v1 (affl.db only)
 11. python3 pipeline/fetch_logos.py        # inline league logos as data URIs
 12. python3 site/build_site.py             # -> site/index.html + docs/index.html (Pages mirror)
+13. python3 audit/audit_ui_contracts.py    # fast dashboard, scope, shard, and build contracts
 
 ## Deploy (GitHub Pages)
 The build writes docs/ as a slim shell (docs/index.html) that fetches the marts from
 docs/data/ same-origin (Pages serves static files; the sandboxed artifact host does not,
 which is why site/index.html inlines everything instead). On GitHub: Settings -> Pages ->
-Source "Deploy from a branch" -> branch `main`, folder `/docs`. The site then serves at
-https://rdsciv.github.io/afflhyperanalytics/. NOTE: a Pages site is publicly reachable at that
-URL regardless of repo visibility (access control for Pages is Enterprise-only), and on
-the Free plan Pages requires a PUBLIC repo. The committed affl.db is sanitized
-(sanitize_db.py): zero member SWIDs/ids — verified by regenerating all marts
+Source "Deploy from a branch" -> branch `main`, folder `/(root)`. The root `index.html`
+preserves the hash route and redirects into `docs/`, so leave the Pages source on root. The
+site then serves at https://rdsciv.github.io/afflhyperanalytics/. NOTE: a Pages site is publicly
+reachable at that URL regardless of repo visibility (access control for Pages is Enterprise-only),
+and on the Free plan Pages requires a PUBLIC repo. The affl.db carried in full thread bundles is
+sanitized (sanitize_db.py): zero member SWIDs/ids — verified by regenerating all marts
 byte-identical after stripping. ESPN cookies never enter the repo.
 GitHub-tree note: the API mirror excludes data/affl.db (binary over a text-only file
 API) and the built site/index.html (over the transport cap); both regenerate via the

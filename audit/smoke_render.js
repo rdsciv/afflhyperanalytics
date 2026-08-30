@@ -12,7 +12,7 @@ function makeEl(sel) {
     _sel: sel, innerHTML: '', textContent: '', value: '', style: {}, dataset: {},
     classList: { add(){}, remove(){}, contains(){ return false; } },
     children: [], firstChild: null,
-    addEventListener(){}, appendChild(){}, removeChild(){}, remove(){},
+    addEventListener(){}, appendChild(){}, removeChild(){}, remove(){}, scrollIntoView(){},
     setAttribute(){}, getAttribute(){ return null; }, closest(){ return null; },
     querySelector(s){ return makeEl(s); }, querySelectorAll(){ return []; },
     getContext(){ return new Proxy({}, { get: (t,k)=> (k==='canvas'? el : (...a)=>0), set: ()=>true }); },
@@ -39,24 +39,27 @@ global.document = {
   head: { appendChild(){} }, body: makeEl('body'),
   addEventListener(){},
 };
-global.location = { hash: '#/' };
+global.location = { hash: '#/', replace(h){ this.hash=h; } };
 global.addEventListener = (t, fn) => { if (t === 'hashchange') renderFn = fn; };
 global.CSS = { escape: s => s };
 global.performance = { now: () => Date.now() };
+global.requestAnimationFrame = fn => fn();
 global.fetch = () => new Promise(() => {});   // never resolves; lazy paths stay pending
 global.URL = { createObjectURL: () => '', revokeObjectURL(){} };
 global.Blob = class {};
 
 const marts = p => JSON.parse(fs.readFileSync(path.join(ROOT, 'data/marts', p)));
+const docs = p => JSON.parse(fs.readFileSync(path.join(ROOT, 'docs/data', p)));
 window.SAVANT = marts('savant_data.json');
-window.EXPLORE = marts('explore_data.json');
+if (fs.existsSync(path.join(ROOT, 'data/marts/explore_data.json'))) window.EXPLORE = marts('explore_data.json');
+else { const a=docs('explore_a.json'); a.rows=a.rows.concat(docs('explore_b.json').rows, docs('explore_c.json').rows); window.EXPLORE=a; }
 window.LUCK = marts('luck_data.json');
 window.LOGOS = {};
 window.VALID = { modern_ok: true, fp_recon_n: 0, fp_recon_pct: 0, fp_recon_mad: 0, starter_weeks: 0,
   starter_match_pct: 0, pbp_plays: 0, bridge: { rostered: 0, gsis: 0, dst: 0, quarantined: 0 },
   trades: { events: 0, items_direct: 0, items_inferred: 0, unresolved: 0, custody_confirmed: 0 },
   xfp2: { recon: { mean_abs_diff: 0, pct_within_1: 0, n: 0 }, holdout: [], worst_bias_pct: 0 } };
-window.GAMELOGS = marts('gamelogs_data.json');
+window.GAMELOGS = fs.existsSync(path.join(ROOT, 'data/marts/gamelogs_data.json')) ? marts('gamelogs_data.json') : docs('gamelogs.json');
 Object.assign(global, { SAVANT: window.SAVANT, EXPLORE: window.EXPLORE });
 
 eval(fs.readFileSync(path.join(ROOT, 'site/app.js'), 'utf8'));
@@ -78,8 +81,8 @@ const routes = [
   `#/p/${eidByPos.QB}`, `#/p/${eidByPos.RB}`, `#/p/${eidByPos.WR}`, `#/p/${eidByPos.TE}`,
   `#/p/${eidByPos.K}`, `#/p/${dstEid}`, `#/p/${draftOnlyEid}`, `#/p/${tradedEid}`,
   `#/pn/${nflPi}`,
-  '#/seasons', '#/s/2024', '#/s/2014', '#/drafts', '#/drafts/all', '#/drafts/2014',
-  '#/trades', '#/luck', '#/luck/2024', '#/records', '#/boards', '#/boards?m=fp&pos=K',
+  '#/seasons', '#/s/2026', '#/s/2024', '#/s/2014', '#/drafts', '#/drafts/all', '#/drafts/2014',
+  '#/trades', '#/luck', '#/luck/2024', '#/records', '#/boards', '#/boards?dy=0&dpos=RB', '#/boards?m=fp&pos=K',
   '#/compare', '#/methods', '#/explore',
 ];
 let bad = 0;

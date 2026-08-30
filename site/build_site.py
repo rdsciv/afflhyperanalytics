@@ -9,10 +9,26 @@ MARTS = ROOT / "data" / "marts"
 REPORTS = ROOT / "data" / "reports"
 
 savant = (MARTS / "savant_data.json").read_text()
+savant_obj = json.loads(savant)
 logos = (MARTS / "logos.json").read_text()
-explore = (MARTS / "explore_data.json").read_text()
+explore_path = MARTS / "explore_data.json"
+if explore_path.exists():
+    explore_obj = json.loads(explore_path.read_text())
+else:
+    # The GitHub mirror omits the 6MB monolith. Reconstruct it from the three
+    # tracked Pages shards so a clean checkout remains buildable.
+    docs_data = ROOT / "docs" / "data"
+    explore_obj = json.loads((docs_data / "explore_a.json").read_text())
+    for name in ("explore_b.json", "explore_c.json"):
+        explore_obj["rows"].extend(json.loads((docs_data / name).read_text())["rows"])
+explore = json.dumps(explore_obj, separators=(",", ":"), ensure_ascii=False)
 luck = (MARTS / "luck_data.json").read_text()
-gamelogs = (MARTS / "gamelogs_data.json").read_text()
+gamelogs_path = MARTS / "gamelogs_data.json"
+gamelogs = gamelogs_path.read_text() if gamelogs_path.exists() else (ROOT / "docs" / "data" / "gamelogs.json").read_text()
+gamelogs_obj = json.loads(gamelogs)
+for name, obj in (("Explore", explore_obj), ("gamelogs", gamelogs_obj)):
+    if obj.get("meta", {}).get("version") != savant_obj["meta"]["version"]:
+        raise ValueError(f"{name} dataset version does not match Savant")
 css = (SITE / "style.css").read_text()
 js = (SITE / "app.js").read_text()
 
@@ -81,7 +97,7 @@ html = """<!DOCTYPE html>
 </body>
 </html>"""
 
-meta = json.loads(savant)["meta"]
+meta = savant_obj["meta"]
 html = html.replace("__CSS__", css).replace("__VER__", meta["version"])
 html = html.replace("__SAVANT__", savant).replace("__EXPLORE__", explore)
 html = html.replace("__LUCK__", luck).replace("__GAMELOGS__", gamelogs)
