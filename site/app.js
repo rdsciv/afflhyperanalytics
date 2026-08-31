@@ -1,4 +1,4 @@
-/* AFFL Savant — single-page application. Data: window.SAVANT, window.EXPLORE, window.VALID */
+/* AFFL Annals — single-page application. Data: window.SAVANT, window.EXPLORE, window.VALID (mart/global names keep the legacy savant identifiers) */
 (function(){
 "use strict";
 const S = window.SAVANT, E = window.EXPLORE, V = window.VALID || {}, L = window.LUCK || {};
@@ -178,7 +178,7 @@ function home(){
   <div class="wrap">
     <div class="hero">
       <div class="kicker">The statistical record of the American Fantasy Football League · ESPN league 51418</div>
-      <h1 class="display">AFFL <span style="color:var(--blue)">Savant</span></h1>
+      <h1 class="display">AFFL <span style="color:var(--blue)">Annals</span></h1>
       <p class="tag">Twelve seasons of custody-tracked history: every franchise, roster week, auction dollar,
       trade, and NFL snap that mattered — joined at the player level and queryable in <a href="#/explore">Explore</a>.</p>
       <div class="statline">
@@ -283,7 +283,7 @@ const ECY  = o=>Object.assign({type:'value', axisLine:{show:false}, axisTick:{sh
 const ECTT = o=>Object.assign({trigger:'axis', backgroundColor:'#10141f', borderColor:'#2a3550', borderWidth:1,
   textStyle:{color:'#e6eefc', fontSize:12, fontFamily:'Inter'}, confine:true}, o||{});
 /* min(px, vw) keeps chart heights proportional on phones — ECharts reads the computed height at init */
-const chartBox = (id, h)=>`<div class="card chartbox" style="padding:10px 8px 4px"><div id="${id}" style="width:100%;height:min(${h}px,${Math.max(46, Math.round(h/6.5))}vw)"></div></div>`;
+const chartBox = (id, h, vwFloor)=>`<div class="card chartbox" style="padding:10px 8px 4px"><div id="${id}" style="width:100%;height:min(${h}px,${vwFloor||Math.max(46, Math.round(h/6.5))}vw)"></div></div>`;
 
 /* ECharts legend entries with the franchise logo as the legend icon (falls back to color swatch) */
 const fLegendData = items => items.map(it=>{ const u = bestLogo[it.fid];
@@ -1402,7 +1402,7 @@ function playerView(eid){
       <div><div class="card chartbox" style="padding:12px 10px 6px"><div id="plarc" style="width:100%;height:252px"></div></div>
       <p class="dim small" style="margin-top:6px">${pos==='K'?'Blue = FP/game · gold bars = AFFL auction price paid that year. Kicking is outside xfp_v2.':'Blue = FP/game · dashed lime = expected FP/game (xfp_v2) · gold bars = AFFL auction price paid that year.'}</p></div></div>
     <h2 class="sect">Every week, every season <span class="sub">bar = weekly FP, colored by AFFL custody · lime = expected</span></h2>
-    ${chartBox('plbeat', 250)}
+    ${chartBox('plbeat', 250, 62)}
     <div class="legend" style="margin-top:8px"><span><span class="sw" style="background:#20293c"></span>not rostered</span><span><span class="sw" style="background:#39445e"></span>on an AFFL bench</span><span><span class="sw" style="background:#37d67a"></span>in a lineup (franchise color)</span><span><span class="sw" style="background:#0e1119;border:1.4px solid #ff4d5e"></span>benched 15+ FP game</span></div>
     ${seasonTableHtml(pi, pos, p)}
     <h2 class="sect">Game logs <span class="sub">NFL regular season · custody + free-agency weeks</span></h2>
@@ -1713,7 +1713,8 @@ function rankHeatBlock(year){
     return `<tr><td class="l stick">${frLink(t.fid,year)}</td>${cells}<td class="num"><b>${avg!=null?avg.toFixed(1):'·'}</b></td></tr>`;
   }).join('');
   return `<div class="tblwrap mtx"><table class="tbl mono heat"><thead>${head}</thead><tbody>${body}</tbody></table></div>
-  <p class="dim small" style="margin-top:8px">Each cell is that team's <b>scoring rank inside the week</b> (1 = highest score in the league that week), regular season only — the schedule-free view of who actually showed up, week by week. Rows ordered by final standing.</p>`;
+  <div class="legend" style="margin-top:8px"><span class="lgst">rank scale:&nbsp;<b style="color:var(--ink)">1</b>&nbsp;<span style="display:inline-block;width:110px;height:10px;border-radius:5px;vertical-align:-1px;background:linear-gradient(90deg,hsla(145,70%,45%,.85),hsla(72,70%,45%,.85),hsla(0,70%,45%,.85))"></span>&nbsp;<b style="color:var(--ink)">worst</b>&nbsp;· green = top weekly score</span></div>
+  <p class="dim small" style="margin-top:4px">Each cell is that team's <b>scoring rank inside the week</b> (1 = highest score in the league that week), regular season only — the schedule-free view of who actually showed up, week by week. Rows ordered by final standing.</p>`;
 }
 function recordsView(qs){
   const yq = +(((qs||'').split('&').find(x=>x.startsWith('y='))||'').slice(2));
@@ -2429,7 +2430,7 @@ let lastAgg = null;
 function exploreView(qs){
   const q = (qs||'').split('&').find(x=>x.startsWith('q='));
   X = normalizeExploreState(q ? decState(q.slice(2)) : (X || defState()));
-  const fChips = E.franchises.map((f,i)=>`<span class="chip ${X.f.includes(f[0])?'on':''}" data-f="${f[0]}" ${X.sc==='ever'?'style="opacity:.35;pointer-events:none"':''}>${esc(f[2])}</span>`).join('');
+  const fChips = E.franchises.map((f,i)=>`<span class="chip ${X.f.includes(f[0])?'on':''}" data-f="${f[0]}" ${X.sc==='ever'?'style="opacity:.35;pointer-events:none"':''}>${logoHtml(f[0],'sm')}${esc(f[2])}</span>`).join('');
   const posChips = ['QB','RB','WR','TE','K','D/ST'].map(p=>`<span class="chip ${X.pos.includes(p)?'on':''}" data-pos="${p}" ${X.sc==='ever'&&p==='D/ST'?'style="opacity:.35;pointer-events:none"':''}>${p}</span>`).join('');
   const msChips = M.map(m=>`<span class="chip ${X.ms.includes(m.k)?'on lime':''}" data-ms="${m.k}" ${X.sc==='ever'&&!m.everOk?'style="opacity:.35;pointer-events:none"':''}>${m.l}</span>`).join('');
   const yearOpts = lo => YEARS.filter(y=>y<=LAST).map(y=>`<option ${((lo?X.s0:X.s1)===y)?'selected':''}>${y}</option>`).join('');
@@ -2441,8 +2442,8 @@ function exploreView(qs){
       <details class="mobile-filters" open>
       <summary>Filters</summary>
       <div class="xrow"><span class="lbl">Custody</span>
-        ${[['started','While started'],['rostered','While rostered'],['bench','Bench weeks'],['ever','Ever rostered (NFL seasons)']].map(([v,l])=>`<span class="chip ${X.sc===v?'on':''}" data-sc="${v}">${l}</span>`).join('')}</div>
-      <div class="xrow"><span class="lbl">Grain</span>
+        ${[['started','While started'],['rostered','While rostered'],['bench','Bench weeks'],['ever','Ever rostered (NFL seasons)']].map(([v,l])=>`<span class="chip ${X.sc===v?'on':''}" data-sc="${v}">${l}</span>`).join('')}
+        <span class="lgsep"></span><span class="lbl" style="width:auto">Grain</span>
         ${GRAINS.map(([v,l])=>`<span class="chip ${X.gr===v?'on':''}" data-gr="${v}" ${X.sc==='ever'&&!EVER_GRAINS.has(v)?'style="opacity:.35;pointer-events:none"':''}>${l}</span>`).join('')}</div>
       <div class="xrow"><span class="lbl">Seasons</span>
         <select id="xs0">${yearOpts(1)}</select><span class="dim">→</span><select id="xs1">${yearOpts(0)}</select>
@@ -2455,8 +2456,9 @@ function exploreView(qs){
         <span class="lbl" style="width:auto;margin-left:14px">Limit</span>
         <select id="xlim">${[25,50,100,250,1000].map(n=>`<option ${X.lim===n?'selected':''}>${n}</option>`).join('')}</select></div>
       <div class="xrow"><span class="lbl">Franchise</span>${X.sc==='ever'?'<span class="dim small">Not applicable to full NFL-season scope</span>':fChips}</div>
-      <div class="xrow"><span class="lbl">Position</span>${posChips}</div>
-      <div class="xrow"><span class="lbl">Player</span><input type="text" id="xpq" class="searchbox" placeholder="Name contains…" value="${esc(X.pi!=null?(ENAME[X.pi]||''):X.pq)}" ${X.pi!=null?'title="Exact player filter from player page"':''}></div>
+      <div class="xrow"><span class="lbl">Position</span>${posChips}
+        <span class="lgsep"></span><span class="lbl" style="width:auto">Player</span>
+        <input type="text" id="xpq" class="searchbox" style="width:min(260px,100%)" placeholder="Name contains…" value="${esc(X.pi!=null?(ENAME[X.pi]||''):X.pq)}" ${X.pi!=null?'title="Exact player filter from player page"':''}></div>
       <div class="xrow"><span class="lbl">Measures</span><div style="display:flex;flex-wrap:wrap;gap:6px">${msChips}</div></div>
       </details>
       <div class="xrow" style="justify-content:flex-end;gap:8px">
@@ -2650,7 +2652,7 @@ function exportCsv(){
   if(!lastAgg) return;
   const {list, active, gd, val} = lastAgg;
   const lines = [
-    '# AFFL Savant Explore export',
+    '# AFFL Annals Explore export',
     '# query: '+$('#xsentence').textContent,
     '# dataset: v'+E.meta.version+' · coverage '+E.meta.coverage+' · scoring: ESPN standard non-PPR',
     '# custody scope: '+X.sc+' · generated: '+new Date().toISOString(),
@@ -2662,7 +2664,7 @@ function exportCsv(){
   });
   const blob = new Blob([lines.join('\n')], {type:'text/csv'});
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob); a.download = 'affl-savant-explore.csv'; a.click();
+  a.href = URL.createObjectURL(blob); a.download = 'affl-annals-explore.csv'; a.click();
   URL.revokeObjectURL(a.href);
 }
 

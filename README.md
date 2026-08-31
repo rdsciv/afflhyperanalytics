@@ -1,4 +1,4 @@
-# AFFL Savant (repo: afflhyperanalytics)
+# AFFL Annals (repo: afflannals; formerly AFFL Savant / afflhyperanalytics)
 
 The statistical record of the AFFL (ESPN league 51418), 2014-2026 pre-draft.
 
@@ -33,7 +33,7 @@ docs/data/ same-origin (Pages serves static files; the sandboxed artifact host d
 which is why site/index.html inlines everything instead). On GitHub: Settings -> Pages ->
 Source "Deploy from a branch" -> branch `main`, folder `/(root)`. The root `index.html`
 preserves the hash route and redirects into `docs/`, so leave the Pages source on root. The
-site then serves at https://rdsciv.github.io/afflhyperanalytics/. NOTE: a Pages site is publicly
+site then serves at https://rdsciv.github.io/afflannals/ (pre-rename: /afflhyperanalytics/). NOTE: a Pages site is publicly
 reachable at that URL regardless of repo visibility (access control for Pages is Enterprise-only),
 and on the Free plan Pages requires a PUBLIC repo. The affl.db carried in full thread bundles is
 sanitized (sanitize_db.py): zero member SWIDs/ids — verified by regenerating all marts

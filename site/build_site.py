@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Assemble the single-file AFFL Savant site: index.html (CSS + data + app inline)."""
+"""Assemble the single-file AFFL Annals site: index.html (CSS + data + app inline)."""
 import json
 from pathlib import Path
 
@@ -68,7 +68,7 @@ html = """<!DOCTYPE html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AFFL Savant — The Statistical Record of the AFFL</title>
+<title>AFFL Annals — The Statistical Record of the AFFL</title>
 <meta name="description" content="Twelve seasons of AFFL history joined to NFL production at the player level. Franchises, players, seasons, drafts, trades, records, and the Explore query engine.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -77,13 +77,13 @@ html = """<!DOCTYPE html>
 </head>
 <body>
 <header class="topbar"><div class="wrap topbar-in">
-  <a class="wordmark" href="#/">AFFL<b>SAVANT</b></a>
+  <a class="wordmark" href="#/">AFFL<b>ANNALS</b></a>
   <nav class="mainnav" id="nav" aria-label="Primary"></nav>
   <span class="ver">v__VER__</span>
 </div></header>
 <main id="app" aria-live="polite"></main>
 <footer><div class="wrap">
-  <span>AFFL Savant · the statistical record of the American Fantasy Football League (ESPN 51418)</span>
+  <span>AFFL Annals · the statistical record of the American Fantasy Football League (ESPN 51418)</span>
   <span>League truth: authenticated ESPN v3 snapshots · NFL truth: nflverse (weekly stats + play-by-play)</span>
   <span>Scoring: ESPN standard non-PPR · metrics versioned in <a class="footlink" href="#/methods">Methodology</a></span>
 </div></footer>
