@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Assemble the single-file AFFL Annals site: index.html (CSS + data + app inline)."""
+import base64
 import json
 from pathlib import Path
 
@@ -7,6 +8,8 @@ ROOT = Path(__file__).resolve().parent.parent
 SITE = ROOT / "site"
 MARTS = ROOT / "data" / "marts"
 REPORTS = ROOT / "data" / "reports"
+
+logo_b64 = base64.b64encode((SITE / "assets" / "affl-logo.png").read_bytes()).decode("ascii")
 
 savant = (MARTS / "savant_data.json").read_text()
 savant_obj = json.loads(savant)
@@ -70,6 +73,7 @@ html = """<!DOCTYPE html>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AFFL Annals — The Statistical Record of the AFFL</title>
 <meta name="description" content="Twelve seasons of AFFL history joined to NFL production at the player level. Franchises, players, seasons, drafts, trades, records, and the Explore query engine.">
+<link rel="icon" href="data:image/png;base64,__LOGO__">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -77,7 +81,7 @@ html = """<!DOCTYPE html>
 </head>
 <body>
 <header class="topbar"><div class="wrap topbar-in">
-  <a class="wordmark" href="#/">AFFL<b>ANNALS</b></a>
+  <a class="wordmark" href="#/"><img class="brand-logo" src="data:image/png;base64,__LOGO__" alt="AFFL">AFFL<b>ANNALS</b></a>
   <nav class="mainnav" id="nav" aria-label="Primary"></nav>
   <span class="ver">v__VER__</span>
 </div></header>
@@ -102,6 +106,7 @@ html = html.replace("__CSS__", css).replace("__VER__", meta["version"])
 html = html.replace("__SAVANT__", savant).replace("__EXPLORE__", explore)
 html = html.replace("__LUCK__", luck).replace("__GAMELOGS__", gamelogs)
 html = html.replace("__VALID__", json.dumps(valid)).replace("__LOGOS__", logos).replace("__JS__", js)
+html = html.replace("__LOGO__", logo_b64)
 
 out = SITE / "index.html"
 out.write_text(html)

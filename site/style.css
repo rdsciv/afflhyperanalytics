@@ -20,10 +20,11 @@ a:hover{text-decoration:underline}
 .topbar{position:sticky; top:0; z-index:50; background:rgba(10,13,19,.92); backdrop-filter:blur(10px);
   border-bottom:1px solid var(--rule)}
 .topbar-in{display:flex; align-items:center; gap:22px; height:58px}
-.wordmark{font-family:'Barlow Condensed'; font-weight:800; font-size:25px; letter-spacing:.04em;
+.wordmark{display:flex; align-items:center; gap:9px; font-family:'Barlow Condensed'; font-weight:800; font-size:25px; letter-spacing:.04em;
   color:var(--ink); white-space:nowrap}
 .wordmark b{color:var(--blue); font-weight:800}
 .wordmark:hover{text-decoration:none}
+.brand-logo{height:38px; width:auto; display:block}
 nav.mainnav{display:flex; gap:2px; overflow-x:auto; scrollbar-width:none}
 nav.mainnav::-webkit-scrollbar{display:none}
 nav.mainnav a{padding:7px 11px; border-radius:8px; color:var(--ink2); font-size:13.5px; font-weight:600; white-space:nowrap}
